@@ -1,23 +1,25 @@
 import arcade
 
+GRAVITY = 0.2
 
 class Player(arcade.Sprite):
-    PLAYER_MOVEMENT_SPEED = 5  # pixels per frame
+    MOVEMENT_SPEED = 3  # pixels per frame
+    JUMP_SPEED = 6
 
     def __init__(self, img):
         super().__init__(img)
 
     def on_up(self):
-        self.change_y = self.PLAYER_MOVEMENT_SPEED
+        self.change_y = self.JUMP_SPEED
 
     def on_down(self):
-        self.change_y = -self.PLAYER_MOVEMENT_SPEED
+        self.change_y = -self.MOVEMENT_SPEED
 
     def on_left(self):
-        self.change_x = -self.PLAYER_MOVEMENT_SPEED
+        self.change_x = -self.MOVEMENT_SPEED
 
     def on_right(self):
-        self.change_x = self.PLAYER_MOVEMENT_SPEED
+        self.change_x = self.MOVEMENT_SPEED
 
     def on_key_x_release(self):
         self.change_x = 0
@@ -46,8 +48,8 @@ class MyGame(arcade.Window):
         self.player_list.append(self.player1)
         self.player_list.append(self.player2)
 
-        self.physics_engine1 = arcade.PhysicsEngineSimple(self.player1, self.wall_list)
-        self.physics_engine2 = arcade.PhysicsEngineSimple(self.player2, self.wall_list)
+        self.physics_engine1 = arcade.PhysicsEnginePlatformer(self.player1, self.wall_list, GRAVITY)
+        self.physics_engine2 = arcade.PhysicsEnginePlatformer(self.player2, self.wall_list, GRAVITY)
 
         self.controller_press = {
             arcade.key.UP:    self.player1.on_up,
