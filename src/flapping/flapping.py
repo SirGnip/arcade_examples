@@ -2,12 +2,14 @@ import arcade
 
 
 class Player(arcade.Sprite):
-    MOVEMENT_SPEED = 0.2  # pixels per frame
-    FLAP_HORIZ_IMPULSE = 1.5
+    MOVEMENT_SPEED = 0.15  # pixels per frame
+    FLAP_HORIZ_IMPULSE = 1.3
     MAX_HORIZ_SPEED = 5.0
     JUMP_SPEED = 3
+    # state
     LANDED = 0
     FLYING = 1
+    # direction
     NO_DIRECTION = 0
     LEFT = 1
     RIGHT = 2
@@ -108,8 +110,21 @@ class MyGame(arcade.Window):
             arcade.key.D: self.player2.on_right_release,
         }
 
-    def setup(self):
-        pass
+        # gamepad setup
+        joysticks = arcade.joysticks.get_game_controllers()
+        self.joy = None
+        if joysticks:
+            for joy in joysticks:
+                print('Found joystick: ', joy.device)
+                joy.open()
+            joy.on_joybutton_press = self.on_joybutton_press
+            joy.on_joybutton_release = self.on_joybutton_release
+            joy.on_joyhat_motion = self.on_joyhat
+            self.controller_press[(id(joy), 0)] = self.player2.on_up
+            self.controller_press[(id(joy), 3)] = self.player2.on_left
+            self.controller_press[(id(joy), 2)] = self.player2.on_right
+            self.controller_release[(id(joy), 3)] = self.player2.on_left_release
+            self.controller_release[(id(joy), 2)] = self.player2.on_right_release
 
     def on_draw(self):
         arcade.start_render()
@@ -124,6 +139,20 @@ class MyGame(arcade.Window):
         if key in self.controller_release:
             self.controller_release[key]()
 
+    def on_joybutton_press(self, joy, button):
+        key = (id(joy), button)
+        if key in self.controller_press:
+            self.controller_press[key]()
+
+    def on_joybutton_release(self, joy, button):
+        key = (id(joy), button)
+        if key in self.controller_release:
+            self.controller_release[key]()
+
+    def on_joyhat(self, joy, hatx, haty):
+        """Many gamepads must be in "analog" mode for the "hat" to report values"""
+        print('hat', hatx, haty)
+
     def update(self, delta_time):
         self.player_list.update()
         self.player1.collision_check(self.walls)
@@ -134,7 +163,6 @@ class MyGame(arcade.Window):
 
 def main():
     app = MyGame(1280, 720, 'Flapping')
-    app.setup()
     app.set_location(250, 35)
     arcade.run()
 
