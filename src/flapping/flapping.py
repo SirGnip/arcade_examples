@@ -2,23 +2,74 @@ import arcade
 
 
 class Player(arcade.Sprite):
-    MOVEMENT_SPEED = 3  # pixels per frame
+    MOVEMENT_SPEED = 0.2  # pixels per frame
+    FLAP_HORIZ_IMPULSE = 1.5
+    MAX_HORIZ_SPEED = 5.0
     JUMP_SPEED = 3
+    LANDED = 0
+    FLYING = 1
+    NO_DIRECTION = 0
+    LEFT = 1
+    RIGHT = 2
 
     def __init__(self, img):
         super().__init__(img)
+        self.state = Player.FLYING
+        self.dir = Player.NO_DIRECTION
 
     def on_up(self):
+        if self.state == Player.LANDED:
+            self.center_y += 1
+        elif self.state == Player.FLYING:
+            if self.dir == Player.LEFT:
+                self.change_x -= Player.FLAP_HORIZ_IMPULSE
+            elif self.dir == Player.RIGHT:
+                self.change_x += Player.FLAP_HORIZ_IMPULSE
         self.change_y += self.JUMP_SPEED
 
-    def on_down(self):
-        self.change_y = -self.MOVEMENT_SPEED
-
     def on_left(self):
-        self.change_x = -self.MOVEMENT_SPEED
+        self.dir = Player.LEFT
+
+    def on_left_release(self):
+        self.dir = Player.NO_DIRECTION
 
     def on_right(self):
-        self.change_x = self.MOVEMENT_SPEED
+        self.dir = Player.RIGHT
+
+    def on_right_release(self):
+        self.dir = Player.NO_DIRECTION
+
+    def set_landed(self):
+        if self.state == Player.FLYING:
+            self.state = Player.LANDED
+
+    def set_flying(self):
+        if self.state == Player.LANDED:
+            self.state = Player.FLYING
+
+    def update(self):
+        super().update()
+        if self.state == Player.LANDED:
+            if self.dir == Player.LEFT:
+                self.change_x -= Player.MOVEMENT_SPEED
+            elif self.dir == Player.RIGHT:
+                self.change_x += Player.MOVEMENT_SPEED
+        self.change_x = min(self.change_x, Player.MAX_HORIZ_SPEED)
+        self.change_x = max(self.change_x, -Player.MAX_HORIZ_SPEED)
+
+    def collision_check(self, walls):
+        hit_list = arcade.geometry.check_for_collision_with_list(self, walls)
+        if len(hit_list) > 0:
+            for item in hit_list:
+                if self.center_y > item.center_y:
+                    self.bottom = item.top - 1
+                    self.change_y = 0.0
+                    self.set_landed()
+                elif self.center_y < item.center_y:
+                    self.top = item.bottom
+                    self.change_y = 0.0
+        else:
+            self.set_flying()
 
 
 class MyGame(arcade.Window):
@@ -31,10 +82,10 @@ class MyGame(arcade.Window):
             s.center_x += 32
 
         self.player1 = Player("img/duck.png")
-        self.player1.center_x = 64
+        self.player1.center_x = 200
         self.player1.center_y = 120
         self.player2 = Player("img/duck.png")
-        self.player2.center_x = 200
+        self.player2.center_x = 400
         self.player2.center_y = 120
 
         self.player_list = arcade.SpriteList()
@@ -43,14 +94,18 @@ class MyGame(arcade.Window):
 
         self.controller_press = {
             arcade.key.UP:    self.player1.on_up,
-            arcade.key.DOWN:  self.player1.on_down,
             arcade.key.LEFT:  self.player1.on_left,
             arcade.key.RIGHT: self.player1.on_right,
             arcade.key.W: self.player2.on_up,
-            arcade.key.S: self.player2.on_down,
             arcade.key.A: self.player2.on_left,
             arcade.key.D: self.player2.on_right,
             arcade.key.ESCAPE: self.close,
+        }
+        self.controller_release = {
+            arcade.key.LEFT:  self.player1.on_left_release,
+            arcade.key.RIGHT: self.player1.on_right_release,
+            arcade.key.A: self.player2.on_left_release,
+            arcade.key.D: self.player2.on_right_release,
         }
 
     def setup(self):
@@ -65,24 +120,16 @@ class MyGame(arcade.Window):
         if key in self.controller_press:
             self.controller_press[key]()
 
+    def on_key_release(self, key, modifiers):
+        if key in self.controller_release:
+            self.controller_release[key]()
+
     def update(self, delta_time):
         self.player_list.update()
+        self.player1.collision_check(self.walls)
+        self.player2.collision_check(self.walls)
         for p in self.player_list:
-            p.change_y -= 0.2 # gravity
-        self.physics(self.player1, self.walls)
-        self.physics(self.player2, self.walls)
-
-    def physics(self, player, walls):
-        hit_list = arcade.geometry.check_for_collision_with_list(player, walls)
-        # If we hit a wall, move so the edges are at the same point
-        if len(hit_list) > 0:
-            for item in hit_list:
-                if player.center_y > item.center_y:
-                    player.bottom = item.top
-                    player.change_y = 0
-                elif player.center_y < item.center_y:
-                    player.top = item.bottom
-                    player.change_y = 0
+            p.change_y -= 0.2  # gravity
 
 
 def main():
