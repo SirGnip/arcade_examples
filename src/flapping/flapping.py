@@ -1,3 +1,5 @@
+import time
+import random
 import arcade
 
 
@@ -84,15 +86,58 @@ class Player(arcade.Sprite):
             self.set_flying()
 
     def respawn(self):
-        self.center_x = 100
-        self.center_y = 100
+        self.center_x = random.randint(200, 1000)
+        self.center_y = 500
         self.change_x = 0.0
         self.change_y = 0.0
 
 
+def shell_sleep(delay):
+    start = time.time()
+    end = start + delay
+    while time.time() < end:
+        yield
+
+
+def shell_script(game):
+    print('shell: welcome')
+    game.state = MyGame.WELCOME
+    yield from shell_sleep(1.0)
+
+    print('shell: registration')
+    game.state = MyGame.REGISTRATION
+    yield from shell_sleep(1.0)
+
+    for i in range(3):
+        print('shell: gameplay')
+        game.state = MyGame.PLAY
+        playing = True
+        while playing:
+            scores = [p.score for p in game.player_list]
+            if max(scores) >= 3:
+                playing = False
+            yield
+
+        print('shell: scoreboard')
+        game.state = MyGame.SCOREBOARD
+        for p in game.player_list:
+            p.score = 0
+        yield from shell_sleep(4.0)
+
+    print('shell: done')
+
+
 class MyGame(arcade.Window):
+    # game states
+    WELCOME = 'welcome'
+    REGISTRATION = 'registration'
+    PLAY = 'gameplay'
+    SCOREBOARD = 'scoreboard'
+
     def __init__(self, width, height, title):
         super().__init__(width, height, title)
+        self.shell_script = shell_script(self)
+        next(self.shell_script)
         self.window_width = width
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
         self.map = arcade.read_tiled_map('map.tmx')
@@ -156,8 +201,16 @@ class MyGame(arcade.Window):
 
     def on_draw(self):
         arcade.start_render()
-        self.walls.draw()
-        self.player_list.draw()
+        if self.state == MyGame.WELCOME:
+            arcade.draw_text('Flapping Game', 100, 400, arcade.color.GRAY, 100)
+            arcade.draw_text('Flapping Game', 105, 405, arcade.color.GREEN, 100)
+        elif self.state == MyGame.REGISTRATION:
+            arcade.draw_text('Player Registration', 100, 400, arcade.color.GRAY, 40)
+        elif self.state == MyGame.PLAY:
+            self.walls.draw()
+            self.player_list.draw()
+        elif self.state == MyGame.SCOREBOARD:
+            arcade.draw_text('Scoreboard', 100, 400, arcade.color.GRAY, 40)
 
     def on_key_press(self, key, modifiers):
         if key in self.controller_press:
@@ -184,17 +237,24 @@ class MyGame(arcade.Window):
             self.controller_press[key](hatx, haty)
 
     def update(self, delta_time):
-        self.player_list.update()
-        self.player1.collision_check(self.walls)
-        self.player2.collision_check(self.walls)
-        self.player3.collision_check(self.walls)
-        for p in self.player_list:
-            p.change_y -= 0.2  # gravity
-            if p.center_x < 0:
-                p.center_x = self.window_width
-            elif p.center_x > self.window_width:
-                p.center_x = 0
-        self.check_player_collision()
+        if self.state == MyGame.WELCOME:
+            pass
+        elif self.state == MyGame.PLAY:
+            self.player_list.update()
+            self.player1.collision_check(self.walls)
+            self.player2.collision_check(self.walls)
+            self.player3.collision_check(self.walls)
+            for p in self.player_list:
+                p.change_y -= 0.2  # gravity
+                if p.center_x < 0:
+                    p.center_x = self.window_width
+                elif p.center_x > self.window_width:
+                    p.center_x = 0
+            self.check_player_collision()
+        try:
+            next(self.shell_script)
+        except StopIteration:
+            self.close()
 
     def check_player_collision(self):
         for idx1, p1 in enumerate(self.player_list):
