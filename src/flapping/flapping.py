@@ -41,6 +41,14 @@ class Player(arcade.Sprite):
     def on_right_release(self):
         self.dir = Player.NO_DIRECTION
 
+    def on_joyhat(self, hatx, haty):
+        if hatx < 0:
+            self.dir = Player.LEFT
+        elif hatx > 0:
+            self.dir = Player.RIGHT
+        else:
+            self.dir = Player.NO_DIRECTION
+
     def set_landed(self):
         if self.state == Player.FLYING:
             self.state = Player.LANDED
@@ -125,6 +133,7 @@ class MyGame(arcade.Window):
             self.controller_press[(id(joy), 2)] = self.player2.on_right
             self.controller_release[(id(joy), 3)] = self.player2.on_left_release
             self.controller_release[(id(joy), 2)] = self.player2.on_right_release
+            self.controller_press[id(joy)] = self.player2.on_joyhat
 
     def on_draw(self):
         arcade.start_render()
@@ -151,7 +160,9 @@ class MyGame(arcade.Window):
 
     def on_joyhat(self, joy, hatx, haty):
         """Many gamepads must be in "analog" mode for the "hat" to report values"""
-        print('hat', hatx, haty)
+        key = id(joy)
+        if key in self.controller_press:
+            self.controller_press[key](hatx, haty)
 
     def update(self, delta_time):
         self.player_list.update()
