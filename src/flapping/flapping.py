@@ -14,10 +14,12 @@ class Player(arcade.Sprite):
     LEFT = 1
     RIGHT = 2
 
-    def __init__(self, img):
+    def __init__(self, img, name):
         super().__init__(img)
         self.state = Player.FLYING
         self.dir = Player.NO_DIRECTION
+        self.score = 0
+        self.name = name
 
     def on_up(self):
         if self.state == Player.LANDED:
@@ -81,6 +83,12 @@ class Player(arcade.Sprite):
         else:
             self.set_flying()
 
+    def respawn(self):
+        self.center_x = 100
+        self.center_y = 100
+        self.change_x = 0.0
+        self.change_y = 0.0
+
 
 class MyGame(arcade.Window):
     def __init__(self, width, height, title):
@@ -92,16 +100,20 @@ class MyGame(arcade.Window):
         for s in self.walls.sprite_list:
             s.center_x += 32
 
-        self.player1 = Player("img/duck.png")
+        self.player1 = Player('img/duck.png', 'one')
         self.player1.center_x = 200
         self.player1.center_y = 120
-        self.player2 = Player("img/duck.png")
+        self.player2 = Player('img/duck.png', 'two')
         self.player2.center_x = 400
         self.player2.center_y = 120
+        self.player3 = Player('img/duck.png', 'three')
+        self.player3.center_x = 600
+        self.player3.center_y = 120
 
         self.player_list = arcade.SpriteList()
         self.player_list.append(self.player1)
         self.player_list.append(self.player2)
+        self.player_list.append(self.player3)
 
         self.controller_press = {
             arcade.key.UP:    self.player1.on_up,
@@ -110,6 +122,9 @@ class MyGame(arcade.Window):
             arcade.key.W: self.player2.on_up,
             arcade.key.A: self.player2.on_left,
             arcade.key.D: self.player2.on_right,
+            arcade.key.O: self.player3.on_up,
+            arcade.key.U: self.player3.on_left,
+            arcade.key.I: self.player3.on_right,
             arcade.key.ESCAPE: self.close,
         }
         self.controller_release = {
@@ -117,6 +132,8 @@ class MyGame(arcade.Window):
             arcade.key.RIGHT: self.player1.on_right_release,
             arcade.key.A: self.player2.on_left_release,
             arcade.key.D: self.player2.on_right_release,
+            arcade.key.U: self.player3.on_left_release,
+            arcade.key.I: self.player3.on_right_release,
         }
 
         # gamepad setup
@@ -129,6 +146,7 @@ class MyGame(arcade.Window):
             joy.on_joybutton_press = self.on_joybutton_press
             joy.on_joybutton_release = self.on_joybutton_release
             joy.on_joyhat_motion = self.on_joyhat
+            # hack in gamepad support for player2
             self.controller_press[(id(joy), 0)] = self.player2.on_up
             self.controller_press[(id(joy), 3)] = self.player2.on_left
             self.controller_press[(id(joy), 2)] = self.player2.on_right
@@ -169,12 +187,31 @@ class MyGame(arcade.Window):
         self.player_list.update()
         self.player1.collision_check(self.walls)
         self.player2.collision_check(self.walls)
+        self.player3.collision_check(self.walls)
         for p in self.player_list:
             p.change_y -= 0.2  # gravity
             if p.center_x < 0:
                 p.center_x = self.window_width
             elif p.center_x > self.window_width:
                 p.center_x = 0
+        self.check_player_collision()
+
+    def check_player_collision(self):
+        for idx1, p1 in enumerate(self.player_list):
+            for idx2 in range(idx1 + 1, len(self.player_list)):
+                p2 = self.player_list[idx2]
+                if arcade.check_for_collision(p1, p2):
+                    if p1.center_y > p2.center_y:
+                        p1.score += 1
+                        p2.respawn()
+                    elif p2.center_y > p1.center_y:
+                        p2.score += 1
+                        p1.respawn()
+                    self.print_scores()
+
+    def print_scores(self):
+        for p in self.player_list:
+            print('{}: {}'.format(p.name, p.score))
 
 
 def main():
