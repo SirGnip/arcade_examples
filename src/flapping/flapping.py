@@ -85,6 +85,7 @@ class Player(arcade.Sprite):
 class MyGame(arcade.Window):
     def __init__(self, width, height, title):
         super().__init__(width, height, title)
+        self.window_width = width
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
         self.map = arcade.read_tiled_map('map.tmx')
         self.walls = arcade.generate_sprites(self.map, 'walls', 1.0)
@@ -170,6 +171,10 @@ class MyGame(arcade.Window):
         self.player2.collision_check(self.walls)
         for p in self.player_list:
             p.change_y -= 0.2  # gravity
+            if p.center_x < 0:
+                p.center_x = self.window_width
+            elif p.center_x > self.window_width:
+                p.center_x = 0
 
 
 def main():
