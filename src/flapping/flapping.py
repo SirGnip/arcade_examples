@@ -250,7 +250,9 @@ class MyGame(arcade.Window):
             self.walls.draw()
             self.player_list.draw()
         elif self.state == MyGame.SCOREBOARD:
-            arcade.draw_text('Scoreboard', 100, 400, arcade.color.GRAY, 40)
+            arcade.draw_text('Scoreboard', 100, 500, arcade.color.GRAY, 60)
+            lines = ['{} = {}'.format(p.name, p.score) for p in self.player_list]
+            arcade.draw_text('\n'.join(lines), 100, 300, arcade.color.WHITE, 50)
 
     def on_key_press(self, key, modifiers):
         if self.state == MyGame.REGISTRATION:
