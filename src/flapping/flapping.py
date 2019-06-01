@@ -256,6 +256,7 @@ class MyGame(arcade.Window):
         elif self.state == MyGame.PLAY:
             self.walls.draw()
             self.player_list.draw()
+            self.draw_scores()
         elif self.state == MyGame.SCOREBOARD:
             arcade.draw_text('Scoreboard', 100, 500, arcade.color.GRAY, 60)
             lines = ['{} = {}'.format(p.name, p.score) for p in self.player_list]
@@ -340,6 +341,10 @@ class MyGame(arcade.Window):
     def is_game_over(self):
         scores = [p.score for p in self.player_list]
         return max(scores) >= MyGame.GOAL_SCORE
+
+    def draw_scores(self):
+        labels = ['{}: {}'.format(p.name, p.score) for p in self.player_list]
+        arcade.draw_text('    '.join(labels), 50, self.height - 25, arcade.color.WHITE, 20)
 
 
 def main():
