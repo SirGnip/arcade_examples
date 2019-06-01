@@ -353,11 +353,11 @@ class MyGame(arcade.Window):
 
     def draw_scores(self):
         labels = ['{}: {}'.format(p.name, p.score) for p in self.player_list]
-        arcade.draw_text('    '.join(labels), 50, self.height - 25, arcade.color.WHITE, 20)
+        arcade.draw_text('    '.join(labels), 50, 5, arcade.color.WHITE, 20)
 
 
 def main():
-    app = MyGame(1280, 720, 'Flapping', False)
+    app = MyGame(1280, 720, 'Flapping', True)
     arcade.run()
 
 
