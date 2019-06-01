@@ -8,6 +8,7 @@ class Player(arcade.Sprite):
     FLAP_HORIZ_IMPULSE = 1.3
     MAX_HORIZ_SPEED = 5.0
     JUMP_SPEED = 3
+    GOAL_SCORE = 3
     # state
     LANDED = 0
     FLYING = 1
@@ -92,39 +93,19 @@ class Player(arcade.Sprite):
         self.change_y = 0.0
 
 
-def shell_sleep(delay):
+def wait_until(predicate):
+    """Utility generator that blocks until given predicate evaluates to true"""
+    while True:
+        if predicate():
+            break
+        yield
+
+
+def script_sleep(delay):
     start = time.time()
     end = start + delay
     while time.time() < end:
         yield
-
-
-def shell_script(game):
-    print('shell: welcome')
-    game.state = MyGame.WELCOME
-    yield from shell_sleep(1.0)
-
-    print('shell: registration')
-    game.state = MyGame.REGISTRATION
-    yield from shell_sleep(1.0)
-
-    for i in range(3):
-        print('shell: gameplay')
-        game.state = MyGame.PLAY
-        playing = True
-        while playing:
-            scores = [p.score for p in game.player_list]
-            if max(scores) >= 3:
-                playing = False
-            yield
-
-        print('shell: scoreboard')
-        game.state = MyGame.SCOREBOARD
-        for p in game.player_list:
-            p.score = 0
-        yield from shell_sleep(4.0)
-
-    print('shell: done')
 
 
 class MyGame(arcade.Window):
@@ -136,7 +117,7 @@ class MyGame(arcade.Window):
 
     def __init__(self, width, height, title):
         super().__init__(width, height, title)
-        self.shell_script = shell_script(self)
+        self.shell_script = self.game_script()
         next(self.shell_script)
         self.window_width = width
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
@@ -146,14 +127,8 @@ class MyGame(arcade.Window):
             s.center_x += 32
 
         self.player1 = Player('img/duck.png', 'one')
-        self.player1.center_x = 200
-        self.player1.center_y = 120
         self.player2 = Player('img/duck.png', 'two')
-        self.player2.center_x = 400
-        self.player2.center_y = 120
         self.player3 = Player('img/duck.png', 'three')
-        self.player3.center_x = 600
-        self.player3.center_y = 120
 
         self.player_list = arcade.SpriteList()
         self.player_list.append(self.player1)
@@ -198,6 +173,33 @@ class MyGame(arcade.Window):
             self.controller_release[(id(joy), 3)] = self.player2.on_left_release
             self.controller_release[(id(joy), 2)] = self.player2.on_right_release
             self.controller_press[id(joy)] = self.player2.on_joyhat
+
+    def setup(self):
+        self.player1.center_x = 200
+        self.player1.center_y = 120
+        self.player2.center_x = 400
+        self.player2.center_y = 120
+        self.player3.center_x = 600
+        self.player3.center_y = 120
+        for p in self.player_list:
+            p.change_x = 0.0
+            p.change_y = 0.0
+            p.score = 0
+
+    def game_script(self):
+        self.state = MyGame.WELCOME
+        yield from script_sleep(1.0)
+
+        self.state = MyGame.REGISTRATION
+        yield from script_sleep(1.0)
+
+        for i in range(3):
+            self.setup()
+            self.state = MyGame.PLAY
+            yield from wait_until(self.is_game_over)
+
+            self.state = MyGame.SCOREBOARD
+            yield from script_sleep(2.0)
 
     def on_draw(self):
         arcade.start_render()
@@ -272,6 +274,10 @@ class MyGame(arcade.Window):
     def print_scores(self):
         for p in self.player_list:
             print('{}: {}'.format(p.name, p.score))
+
+    def is_game_over(self):
+        scores = [p.score for p in self.player_list]
+        return max(scores) >= GOAL_SCORE
 
 
 def main():
