@@ -96,7 +96,7 @@ class Registration:
     """Hacky class to store state related to the Registration state. Prob should be a "state" class or something."""
     def __init__(self):
         self.msg = '...'
-        self.last_key = None
+        self.last_input = None
         self.done = False
         self.summary = ''
 
@@ -107,7 +107,18 @@ class Registration:
             arcade.draw_text(self.summary, 100, 350, arcade.color.GRAY, 25, anchor_y='top')
 
     def on_key(self, key):
-        self.last_key = key
+        self.last_input = key
+
+    def on_joybutton(self, joy, button):
+        self.last_input = (id(joy), button)
+
+    def get_input_label(self):
+        if self.last_input is None:
+            return ''
+        elif isinstance(self.last_input, int):
+            return chr(self.last_input)  # keyboard input
+        else:
+            return '{}/{}'.format(self.last_input[0], self.last_input[1]) # joystick input
 
 
 class MyGame(arcade.Window):
@@ -190,7 +201,7 @@ class MyGame(arcade.Window):
         while True:
             player_num += 1
             self.reg.msg = 'Press FLAP to register Player {}... ESC to start game.'.format(player_num)
-            key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_key)
+            key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
 
             if key == arcade.key.ESCAPE:
                 break
@@ -198,33 +209,35 @@ class MyGame(arcade.Window):
             self.player_list.append(player)
             self.controller_press[key] = player.on_up
             name = names[player_num - 1]
-            self.reg.msg = 'Created player {} with FLAP: {}'.format(name, chr(key))
-            self.reg.summary += 'Player:{} FLAP:{} '.format(name, chr(key))
-            self.reg.last_key = None
+            input_label = self.reg.get_input_label() # HACKY!
+            self.reg.msg = 'Created player {} with FLAP: {}'.format(name, input_label)
+            self.reg.summary += 'Player:{} FLAP:{} '.format(name, input_label)
+            self.reg.last_input = None
             yield from scriptutl.sleep(CONFIRM_DELAY)
 
             self.reg.msg = 'Press LEFT for Player {}'.format(player_num)
-            key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_key)
+            key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
 
             self.controller_press[key] = player.on_left
             self.controller_release[key] = player.on_left_release
-            self.reg.msg = 'Got LEFT: {}'.format(chr(key))
-            self.reg.summary += 'LEFT:{} '.format(chr(key))
-            self.reg.last_key = None
+            input_label = self.reg.get_input_label()  # HACKY!
+            self.reg.msg = 'Got LEFT: {}'.format(input_label)
+            self.reg.summary += 'LEFT:{} '.format(input_label)
+            self.reg.last_input = None
             yield from scriptutl.sleep(CONFIRM_DELAY)
 
             self.reg.msg = 'Press RIGHT for Player {}'.format(player_num)
-            key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_key)
+            key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
 
             self.controller_press[key] = player.on_right
             self.controller_release[key] = player.on_right_release
-            self.reg.msg = 'Got RIGHT: {}'.format(chr(key))
-            self.reg.summary += 'RIGHT:{}\n'.format(chr(key))
-            self.reg.last_key = None
+            input_label = self.reg.get_input_label()  # HACKY!
+            self.reg.msg = 'Got RIGHT: {}'.format(input_label)
+            self.reg.summary += 'RIGHT:{}\n'.format(input_label)
+            self.reg.last_input = None
             yield from scriptutl.sleep(CONFIRM_DELAY)
 
         self.reg.done = True
-
 
     def on_draw(self):
         arcade.start_render()
@@ -253,8 +266,11 @@ class MyGame(arcade.Window):
 
     def on_joybutton_press(self, joy, button):
         key = (id(joy), button)
-        if key in self.controller_press:
-            self.controller_press[key]()
+        if self.state == MyGame.REGISTRATION:
+            self.reg.on_joybutton(joy, button)
+        elif self.state == MyGame.PLAY:
+            if key in self.controller_press:
+                self.controller_press[key]()
 
     def on_joybutton_release(self, joy, button):
         key = (id(joy), button)
