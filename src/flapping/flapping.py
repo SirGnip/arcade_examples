@@ -112,11 +112,17 @@ class Registration:
     def on_joybutton(self, joy, button):
         self.last_input = (id(joy), button)
 
+    def on_joyhat(self, joy, hatx, haty):
+        self.last_input = id(joy)
+
     def get_input_label(self):
         if self.last_input is None:
             return ''
         elif isinstance(self.last_input, int):
-            return chr(self.last_input)  # keyboard input
+            if self.last_input > 10000:
+                return 'joyhat'
+            else:
+                return chr(self.last_input)  # keyboard input
         else:
             return '{}/{}'.format(self.last_input[0], self.last_input[1]) # joystick input
 
@@ -217,6 +223,14 @@ class MyGame(arcade.Window):
 
             self.reg.msg = 'Press LEFT for Player {}'.format(player_num)
             key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
+            if isinstance(key, int) and key > 10000:
+                # VERY HACKY way to handle joyhat
+                self.controller_press[key] = player.on_joyhat
+                self.reg.msg = 'LEFT/RIGHT:{}/joyhat\n'.format(key)
+                self.reg.summary += self.reg.msg
+                self.reg.last_input = None
+                yield from scriptutl.sleep(CONFIRM_DELAY)
+                continue
 
             self.controller_press[key] = player.on_left
             self.controller_release[key] = player.on_left_release
@@ -281,9 +295,13 @@ class MyGame(arcade.Window):
 
     def on_joyhat(self, joy, hatx, haty):
         """Many gamepads must be in "analog" mode for the "hat" to report values"""
-        key = id(joy)
-        if key in self.controller_press:
-            self.controller_press[key](hatx, haty)
+        key = id(joy) # theoretically, there could be a collision between this and keyboard values (both are simple ints)
+        if self.state == MyGame.REGISTRATION:
+            if hatx != 0:
+                self.reg.on_joyhat(joy, hatx, haty)
+        elif self.state == MyGame.PLAY:
+            if key in self.controller_press:
+                self.controller_press[key](hatx, haty)
 
     def update(self, delta_time):
         if self.state == MyGame.WELCOME:
