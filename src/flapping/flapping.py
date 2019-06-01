@@ -92,6 +92,24 @@ class Player(arcade.Sprite):
         self.change_y = 0.0
 
 
+class Registration:
+    """Hacky class to store state related to the Registration state. Prob should be a "state" class or something."""
+    def __init__(self):
+        self.msg = '...'
+        self.last_key = None
+        self.done = False
+        self.summary = ''
+
+    def on_draw(self):
+        arcade.draw_text('Player Registration', 100, 600, arcade.color.WHITE, 40)
+        arcade.draw_text(self.msg, 100, 500, arcade.color.GRAY, 30)
+        if len(self.summary) > 0:
+            arcade.draw_text(self.summary, 100, 350, arcade.color.GRAY, 25, anchor_y='top')
+
+    def on_key(self, key):
+        self.last_key = key
+
+
 class MyGame(arcade.Window):
     # Constants
     GOAL_SCORE = 3
@@ -104,6 +122,8 @@ class MyGame(arcade.Window):
     def __init__(self, width, height, title):
         super().__init__(width, height, title)
         self.script = self.game_script()
+        self.reg = Registration()
+        self.reg_script = self.registration_script()
         next(self.script)
         self.window_width = width
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
@@ -112,34 +132,11 @@ class MyGame(arcade.Window):
         for s in self.walls.sprite_list:
             s.center_x += 32
 
-        self.player1 = Player('img/duck.png', 'one')
-        self.player2 = Player('img/duck.png', 'two')
-        self.player3 = Player('img/duck.png', 'three')
-
         self.player_list = arcade.SpriteList()
-        self.player_list.append(self.player1)
-        self.player_list.append(self.player2)
-        self.player_list.append(self.player3)
-
         self.controller_press = {
-            arcade.key.UP:    self.player1.on_up,
-            arcade.key.LEFT:  self.player1.on_left,
-            arcade.key.RIGHT: self.player1.on_right,
-            arcade.key.W: self.player2.on_up,
-            arcade.key.A: self.player2.on_left,
-            arcade.key.D: self.player2.on_right,
-            arcade.key.O: self.player3.on_up,
-            arcade.key.U: self.player3.on_left,
-            arcade.key.I: self.player3.on_right,
             arcade.key.ESCAPE: self.close,
         }
         self.controller_release = {
-            arcade.key.LEFT:  self.player1.on_left_release,
-            arcade.key.RIGHT: self.player1.on_right_release,
-            arcade.key.A: self.player2.on_left_release,
-            arcade.key.D: self.player2.on_right_release,
-            arcade.key.U: self.player3.on_left_release,
-            arcade.key.I: self.player3.on_right_release,
         }
 
         # gamepad setup
@@ -152,25 +149,16 @@ class MyGame(arcade.Window):
             joy.on_joybutton_press = self.on_joybutton_press
             joy.on_joybutton_release = self.on_joybutton_release
             joy.on_joyhat_motion = self.on_joyhat
-            # hack in gamepad support for player2
-            self.controller_press[(id(joy), 0)] = self.player2.on_up
-            self.controller_press[(id(joy), 3)] = self.player2.on_left
-            self.controller_press[(id(joy), 2)] = self.player2.on_right
-            self.controller_release[(id(joy), 3)] = self.player2.on_left_release
-            self.controller_release[(id(joy), 2)] = self.player2.on_right_release
-            self.controller_press[id(joy)] = self.player2.on_joyhat
 
     def setup(self):
-        self.player1.center_x = 200
-        self.player1.center_y = 120
-        self.player2.center_x = 400
-        self.player2.center_y = 120
-        self.player3.center_x = 600
-        self.player3.center_y = 120
+        x = 100
         for p in self.player_list:
+            p.center_x = x
+            p.center_y = 120
             p.change_x = 0.0
             p.change_y = 0.0
             p.score = 0
+            x += 100
 
     def game_script(self):
         """Generator-based game "script" that drives the game through its main states"""
@@ -178,7 +166,7 @@ class MyGame(arcade.Window):
         yield from scriptutl.sleep(1.0)
 
         self.state = MyGame.REGISTRATION
-        yield from scriptutl.sleep(1.0)
+        yield from scriptutl.wait_until(lambda: self.reg.done)
 
         for i in range(3):
             self.setup()
@@ -190,13 +178,61 @@ class MyGame(arcade.Window):
 
         print('Game over')
 
+    def registration_script(self):
+        """Generator-script that creates players and registers their input"""
+        # This is a WIP, experimenting with generator-based scripts to drive sequential logic
+        # EDGE: what happens if there are multiple key presses in one frame? Prob need a queue, not a single value.
+        # BUG: trying to start game with one player
+        # BUG: can register same key multiple times (overwriting previous registration)
+        CONFIRM_DELAY = 0.7
+        names = ('TheOne', 'Two-fer', 'Threesies', 'Four', 'Fiver', 'PickUpSix', 'Lucky7')
+        player_num = 0
+        while True:
+            player_num += 1
+            self.reg.msg = 'Press FLAP to register Player {}... ESC to start game.'.format(player_num)
+            key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_key)
+
+            if key == arcade.key.ESCAPE:
+                break
+            player = Player('img/duck.png', names[player_num - 1])
+            self.player_list.append(player)
+            self.controller_press[key] = player.on_up
+            name = names[player_num - 1]
+            self.reg.msg = 'Created player {} with FLAP: {}'.format(name, chr(key))
+            self.reg.summary += 'Player:{} FLAP:{} '.format(name, chr(key))
+            self.reg.last_key = None
+            yield from scriptutl.sleep(CONFIRM_DELAY)
+
+            self.reg.msg = 'Press LEFT for Player {}'.format(player_num)
+            key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_key)
+
+            self.controller_press[key] = player.on_left
+            self.controller_release[key] = player.on_left_release
+            self.reg.msg = 'Got LEFT: {}'.format(chr(key))
+            self.reg.summary += 'LEFT:{} '.format(chr(key))
+            self.reg.last_key = None
+            yield from scriptutl.sleep(CONFIRM_DELAY)
+
+            self.reg.msg = 'Press RIGHT for Player {}'.format(player_num)
+            key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_key)
+
+            self.controller_press[key] = player.on_right
+            self.controller_release[key] = player.on_right_release
+            self.reg.msg = 'Got RIGHT: {}'.format(chr(key))
+            self.reg.summary += 'RIGHT:{}\n'.format(chr(key))
+            self.reg.last_key = None
+            yield from scriptutl.sleep(CONFIRM_DELAY)
+
+        self.reg.done = True
+
+
     def on_draw(self):
         arcade.start_render()
         if self.state == MyGame.WELCOME:
             arcade.draw_text('Flapping Game', 100, 400, arcade.color.GRAY, 100)
             arcade.draw_text('Flapping Game', 105, 405, arcade.color.GREEN, 100)
         elif self.state == MyGame.REGISTRATION:
-            arcade.draw_text('Player Registration', 100, 400, arcade.color.GRAY, 40)
+            self.reg.on_draw()
         elif self.state == MyGame.PLAY:
             self.walls.draw()
             self.player_list.draw()
@@ -204,12 +240,16 @@ class MyGame(arcade.Window):
             arcade.draw_text('Scoreboard', 100, 400, arcade.color.GRAY, 40)
 
     def on_key_press(self, key, modifiers):
-        if key in self.controller_press:
-            self.controller_press[key]()
+        if self.state == MyGame.REGISTRATION:
+            self.reg.on_key(key)
+        elif self.state == MyGame.PLAY:
+            if key in self.controller_press:
+                self.controller_press[key]()
 
     def on_key_release(self, key, modifiers):
-        if key in self.controller_release:
-            self.controller_release[key]()
+        if self.state == MyGame.PLAY:
+            if key in self.controller_release:
+                self.controller_release[key]()
 
     def on_joybutton_press(self, joy, button):
         key = (id(joy), button)
@@ -230,11 +270,15 @@ class MyGame(arcade.Window):
     def update(self, delta_time):
         if self.state == MyGame.WELCOME:
             pass
+        elif self.state == MyGame.REGISTRATION:
+            try:
+                next(self.reg_script)
+            except StopIteration:
+                pass
         elif self.state == MyGame.PLAY:
             self.player_list.update()
-            self.player1.collision_check(self.walls)
-            self.player2.collision_check(self.walls)
-            self.player3.collision_check(self.walls)
+            for p in self.player_list:
+                p.collision_check(self.walls)
             for p in self.player_list:
                 p.change_y -= 0.2  # gravity
                 if p.center_x < 0:
