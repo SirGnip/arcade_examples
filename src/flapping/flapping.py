@@ -1,5 +1,5 @@
-import time
 import random
+import scriptutl
 import arcade
 
 
@@ -8,7 +8,6 @@ class Player(arcade.Sprite):
     FLAP_HORIZ_IMPULSE = 1.3
     MAX_HORIZ_SPEED = 5.0
     JUMP_SPEED = 3
-    GOAL_SCORE = 3
     # state
     LANDED = 0
     FLYING = 1
@@ -93,22 +92,9 @@ class Player(arcade.Sprite):
         self.change_y = 0.0
 
 
-def wait_until(predicate):
-    """Utility generator that blocks until given predicate evaluates to true"""
-    while True:
-        if predicate():
-            break
-        yield
-
-
-def script_sleep(delay):
-    start = time.time()
-    end = start + delay
-    while time.time() < end:
-        yield
-
-
 class MyGame(arcade.Window):
+    # Constants
+    GOAL_SCORE = 3
     # game states
     WELCOME = 'welcome'
     REGISTRATION = 'registration'
@@ -117,8 +103,8 @@ class MyGame(arcade.Window):
 
     def __init__(self, width, height, title):
         super().__init__(width, height, title)
-        self.shell_script = self.game_script()
-        next(self.shell_script)
+        self.script = self.game_script()
+        next(self.script)
         self.window_width = width
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
         self.map = arcade.read_tiled_map('map.tmx')
@@ -187,19 +173,22 @@ class MyGame(arcade.Window):
             p.score = 0
 
     def game_script(self):
+        """Generator-based game "script" that drives the game through its main states"""
         self.state = MyGame.WELCOME
-        yield from script_sleep(1.0)
+        yield from scriptutl.sleep(1.0)
 
         self.state = MyGame.REGISTRATION
-        yield from script_sleep(1.0)
+        yield from scriptutl.sleep(1.0)
 
         for i in range(3):
             self.setup()
             self.state = MyGame.PLAY
-            yield from wait_until(self.is_game_over)
+            yield from scriptutl.wait_until(self.is_game_over)
 
             self.state = MyGame.SCOREBOARD
-            yield from script_sleep(2.0)
+            yield from scriptutl.sleep(2.0)
+
+        print('Game over')
 
     def on_draw(self):
         arcade.start_render()
@@ -254,7 +243,7 @@ class MyGame(arcade.Window):
                     p.center_x = 0
             self.check_player_collision()
         try:
-            next(self.shell_script)
+            next(self.script)
         except StopIteration:
             self.close()
 
@@ -277,7 +266,7 @@ class MyGame(arcade.Window):
 
     def is_game_over(self):
         scores = [p.score for p in self.player_list]
-        return max(scores) >= GOAL_SCORE
+        return max(scores) >= MyGame.GOAL_SCORE
 
 
 def main():
