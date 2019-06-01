@@ -163,9 +163,9 @@ class MyGame(arcade.Window):
             for joy in joysticks:
                 print('Found joystick: ', joy.device)
                 joy.open()
-            joy.on_joybutton_press = self.on_joybutton_press
-            joy.on_joybutton_release = self.on_joybutton_release
-            joy.on_joyhat_motion = self.on_joyhat
+                joy.on_joybutton_press = self.on_joybutton_press
+                joy.on_joybutton_release = self.on_joybutton_release
+                joy.on_joyhat_motion = self.on_joyhat
 
     def setup(self):
         x = 100
