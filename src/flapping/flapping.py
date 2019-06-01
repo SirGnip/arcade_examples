@@ -12,16 +12,21 @@ class Player(arcade.Sprite):
     LANDED = 0
     FLYING = 1
     # direction
-    NO_DIRECTION = 0
+    RIGHT = 0
     LEFT = 1
-    RIGHT = 2
+    NO_DIRECTION = 2
 
     def __init__(self, img, name):
-        super().__init__(img)
+        super().__init__()
         self.state = Player.FLYING
         self.dir = Player.NO_DIRECTION
         self.score = 0
         self.name = name
+        right_texture = arcade.load_texture(img)
+        left_texture = arcade.load_texture(img, mirrored=True)
+        self.textures.append(right_texture)
+        self.textures.append(left_texture)
+        self.set_texture(Player.LEFT)
 
     def on_up(self):
         if self.state == Player.LANDED:
@@ -35,12 +40,14 @@ class Player(arcade.Sprite):
 
     def on_left(self):
         self.dir = Player.LEFT
+        self.set_texture(Player.LEFT)
 
     def on_left_release(self):
         self.dir = Player.NO_DIRECTION
 
     def on_right(self):
         self.dir = Player.RIGHT
+        self.set_texture(Player.RIGHT)
 
     def on_right_release(self):
         self.dir = Player.NO_DIRECTION
@@ -48,8 +55,10 @@ class Player(arcade.Sprite):
     def on_joyhat(self, hatx, haty):
         if hatx < 0:
             self.dir = Player.LEFT
+            self.set_texture(Player.LEFT)
         elif hatx > 0:
             self.dir = Player.RIGHT
+            self.set_texture(Player.RIGHT)
         else:
             self.dir = Player.NO_DIRECTION
 
