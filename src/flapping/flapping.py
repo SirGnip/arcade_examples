@@ -136,8 +136,10 @@ class MyGame(arcade.Window):
     PLAY = 'gameplay'
     SCOREBOARD = 'scoreboard'
 
-    def __init__(self, width, height, title):
-        super().__init__(width, height, title)
+    def __init__(self, width, height, title, fullscreen):
+        super().__init__(width, height, title, fullscreen)
+        if not fullscreen:
+            self.set_location(250, 35)
         self.script = self.game_script()
         self.reg = Registration()
         self.reg_script = self.registration_script()
@@ -350,8 +352,7 @@ class MyGame(arcade.Window):
 
 
 def main():
-    app = MyGame(1280, 720, 'Flapping')
-    app.set_location(250, 35)
+    app = MyGame(1280, 720, 'Flapping', False)
     arcade.run()
 
 
