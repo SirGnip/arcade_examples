@@ -203,7 +203,6 @@ class MyGame(arcade.Window):
         # EDGE: what happens if there are multiple key presses in one frame? Prob need a queue, not a single value.
         # BUG: trying to start game with one player
         # BUG: can register same key multiple times (overwriting previous registration)
-        CONFIRM_DELAY = 0.7
         names = ('TheOne', 'Two-fer', 'Threesies', 'Four', 'Fiver', 'PickUpSix', 'Lucky7')
         player_num = 0
         while True:
@@ -218,29 +217,23 @@ class MyGame(arcade.Window):
             self.controller_press[key] = player.on_up
             name = names[player_num - 1]
             input_label = self.reg.get_input_label() # HACKY!
-            self.reg.msg = 'Created player {} with FLAP: {}'.format(name, input_label)
             self.reg.summary += 'Player:{} FLAP:{} '.format(name, input_label)
             self.reg.last_input = None
-            yield from scriptutl.sleep(CONFIRM_DELAY)
 
             self.reg.msg = 'Press LEFT for Player {}'.format(player_num)
             key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
             if isinstance(key, int) and key > 10000:
                 # VERY HACKY way to handle joyhat
                 self.controller_press[key] = player.on_joyhat
-                self.reg.msg = 'LEFT/RIGHT:{}/joyhat\n'.format(key)
-                self.reg.summary += self.reg.msg
+                self.reg.summary += 'LEFT/RIGHT:{}/joyhat\n'.format(key)
                 self.reg.last_input = None
-                yield from scriptutl.sleep(CONFIRM_DELAY)
                 continue
 
             self.controller_press[key] = player.on_left
             self.controller_release[key] = player.on_left_release
             input_label = self.reg.get_input_label()  # HACKY!
-            self.reg.msg = 'Got LEFT: {}'.format(input_label)
             self.reg.summary += 'LEFT:{} '.format(input_label)
             self.reg.last_input = None
-            yield from scriptutl.sleep(CONFIRM_DELAY)
 
             self.reg.msg = 'Press RIGHT for Player {}'.format(player_num)
             key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
@@ -248,10 +241,8 @@ class MyGame(arcade.Window):
             self.controller_press[key] = player.on_right
             self.controller_release[key] = player.on_right_release
             input_label = self.reg.get_input_label()  # HACKY!
-            self.reg.msg = 'Got RIGHT: {}'.format(input_label)
             self.reg.summary += 'RIGHT:{}\n'.format(input_label)
             self.reg.last_input = None
-            yield from scriptutl.sleep(CONFIRM_DELAY)
 
         self.reg.done = True
 
