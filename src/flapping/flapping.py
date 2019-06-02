@@ -101,22 +101,78 @@ class Player(arcade.Sprite):
         self.change_y = 0.0
 
 
+class RegistrationEntry:
+    """Represents a player during the registration phase"""
+    def __init__(self):
+        self.name = None
+        self.make_name()
+        self.flap = None
+        self.left = None
+        self.right = None
+
+    def make_name(self):
+        self.name = random.choice(Registration.NAMES)
+
+    def get_summary(self):
+        """Return a string representing the player"""
+        summary = 'Player:{} FLAP:{} '.format(self.name, self.get_input_label(self.flap))
+        if self.left:
+            summary += 'LEFT:{} '.format(self.get_input_label(self.left))
+        if self.right:
+            summary += 'RIGHT:{}\n'.format(self.get_input_label(self.right))
+        return summary
+
+    @staticmethod
+    def get_input_label(key):
+        """Given a key, get a description of it (EXTREMELY HACKY!)"""
+        if key is None:
+            return ''
+        elif isinstance(key, int):
+            if key > 10000:
+                return 'joyhat'
+            else:
+                return chr(key)  # keyboard input
+        else:
+            return '{}/{}'.format(key[0], key[1])  # joystick input
+
+    def finalize(self, game):
+        """Register a real player and input handlers with the game when registration is complete"""
+        player = Player('img/duck.png', self.name)
+        game.player_list.append(player)
+        game.controller_press[self.flap] = player.on_up
+        if isinstance(self.left, int) and self.left > 10000:
+            game.controller_press[self.left] = player.on_joyhat
+        else:
+            game.controller_press[self.left] = player.on_left
+            game.controller_release[self.left] = player.on_left_release
+            game.controller_press[self.right] = player.on_right
+            game.controller_release[self.right] = player.on_right_release
+
+
 class Registration:
     """Hacky class to store state related to the Registration state. Prob should be a "state" class or something."""
+    NAMES = ('Mr. Boss', 'Dude', 'Glorb', 'Franky', 'Wayne', 'Bruce', 'Dutchess', 'Flash', 'Slick')
+
     def __init__(self):
         self.msg = '...'
         self.last_input = None
         self.done = False
-        self.summary = ''
+        self.entries = []
 
     def on_draw(self):
         arcade.draw_text('Player Registration', 100, 600, arcade.color.WHITE, 40)
         arcade.draw_text(self.msg, 100, 500, arcade.color.GRAY, 30)
-        if len(self.summary) > 0:
-            arcade.draw_text(self.summary, 100, 350, arcade.color.GRAY, 25, anchor_y='top')
+        summary = self.get_summary()
+        arcade.draw_text(summary, 100, 350, arcade.color.GRAY, 25, anchor_y='top')
 
     def on_key(self, key):
-        self.last_input = key
+        matched = False
+        for entry in self.entries:
+            if key == entry.flap:
+                entry.make_name()
+                matched = True
+        if not matched:
+            self.last_input = key
 
     def on_joybutton(self, joy, button):
         self.last_input = (id(joy), button)
@@ -124,16 +180,15 @@ class Registration:
     def on_joyhat(self, joy, hatx, haty):
         self.last_input = id(joy)
 
-    def get_input_label(self):
-        if self.last_input is None:
-            return ''
-        elif isinstance(self.last_input, int):
-            if self.last_input > 10000:
-                return 'joyhat'
-            else:
-                return chr(self.last_input)  # keyboard input
-        else:
-            return '{}/{}'.format(self.last_input[0], self.last_input[1]) # joystick input
+    def get_summary(self):
+        summaries = [e.get_summary() for e in self.entries]
+        if len(summaries) == 0:
+            return '<no players registered>'
+        return '\n'.join(summaries)
+
+    def finalize(self, game):
+        for entry in self.entries:
+            entry.finalize(game)
 
 
 class MyGame(arcade.Window):
@@ -216,7 +271,6 @@ class MyGame(arcade.Window):
         # EDGE: what happens if there are multiple key presses in one frame? Prob need a queue, not a single value.
         # BUG: trying to start game with one player
         # BUG: can register same key multiple times (overwriting previous registration)
-        names = ('TheOne', 'Two-fer', 'Threesies', 'Four', 'Fiver', 'PickUpSix', 'Lucky7')
         player_num = 0
         while True:
             player_num += 1
@@ -225,38 +279,30 @@ class MyGame(arcade.Window):
 
             if key == arcade.key.ESCAPE:
                 break
-            player = Player('img/duck.png', names[player_num - 1])
-            self.player_list.append(player)
-            self.controller_press[key] = player.on_up
-            name = names[player_num - 1]
-            input_label = self.reg.get_input_label() # HACKY!
-            self.reg.summary += 'Player:{} FLAP:{} '.format(name, input_label)
-            self.reg.last_input = None
 
+            entry = RegistrationEntry()
+            self.reg.entries.append(entry)
+            entry.flap = key
+            self.reg.last_input = None
             self.reg.msg = 'Press LEFT for Player {}'.format(player_num)
             key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
+
             if isinstance(key, int) and key > 10000:
                 # VERY HACKY way to handle joyhat
-                self.controller_press[key] = player.on_joyhat
-                self.reg.summary += 'LEFT/RIGHT:{}/joyhat\n'.format(key)
+                entry.left = key
+                entry.right = key
                 self.reg.last_input = None
                 continue
 
-            self.controller_press[key] = player.on_left
-            self.controller_release[key] = player.on_left_release
-            input_label = self.reg.get_input_label()  # HACKY!
-            self.reg.summary += 'LEFT:{} '.format(input_label)
+            entry.left = key
             self.reg.last_input = None
-
             self.reg.msg = 'Press RIGHT for Player {}'.format(player_num)
             key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
 
-            self.controller_press[key] = player.on_right
-            self.controller_release[key] = player.on_right_release
-            input_label = self.reg.get_input_label()  # HACKY!
-            self.reg.summary += 'RIGHT:{}\n'.format(input_label)
+            entry.right = key
             self.reg.last_input = None
 
+        self.reg.finalize(self)
         self.reg.done = True
 
     def on_draw(self):
@@ -361,7 +407,7 @@ class MyGame(arcade.Window):
 
 
 def main():
-    app = MyGame(1280, 720, 'Flapping', True)
+    app = MyGame(1280, 720, 'Flapping', False)
     arcade.run()
 
 
