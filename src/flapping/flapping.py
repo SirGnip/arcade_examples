@@ -395,13 +395,28 @@ class MyGame(arcade.Window):
             for idx2 in range(idx1 + 1, len(self.player_list)):
                 p2 = self.player_list[idx2]
                 if arcade.check_for_collision(p1, p2):
-                    if p1.center_y > p2.center_y:
+                    if int(p1.center_y) == int(p2.center_y):
+                        # equal collision
+                        if p1.center_x < p2.center_x:
+                            p1.center_x += -1
+                            p1.change_x = -0.5
+                            p1.change_y = 0.0
+                            p2.center_x += 1
+                            p2.change_x = 0.5
+                            p2.change_y = 0.0
+                        else:
+                            p1.center_x += 1
+                            p1.change_x = 0.5
+                            p1.change_y = 0.0
+                            p2.center_x += -1
+                            p2.change_x = -0.5
+                            p2.change_y = 0.0
+                    elif p1.center_y > p2.center_y:
                         p1.score += 1
                         p2.respawn()
                     elif p2.center_y > p1.center_y:
                         p2.score += 1
                         p1.respawn()
-                    self.print_scores()
 
     def print_scores(self):
         for p in self.player_list:
