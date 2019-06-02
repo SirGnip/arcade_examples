@@ -1,13 +1,10 @@
 import random
 import scriptutl
+import flapping_cfg as CFG
 import arcade
 
 
 class Player(arcade.Sprite):
-    MOVEMENT_SPEED = 0.15  # pixels per frame
-    FLAP_HORIZ_IMPULSE = 1.3
-    MAX_HORIZ_SPEED = 5.0
-    JUMP_SPEED = 3
     # state
     LANDED = 0
     FLYING = 1
@@ -33,10 +30,10 @@ class Player(arcade.Sprite):
             self.center_y += 1
         elif self.state == Player.FLYING:
             if self.dir == Player.LEFT:
-                self.change_x -= Player.FLAP_HORIZ_IMPULSE
+                self.change_x -= CFG.Player.flap_horiz_impulse
             elif self.dir == Player.RIGHT:
-                self.change_x += Player.FLAP_HORIZ_IMPULSE
-        self.change_y += self.JUMP_SPEED
+                self.change_x += CFG.Player.flap_horiz_impulse
+        self.change_y += CFG.Player.jump_speed
 
     def on_left(self):
         self.dir = Player.LEFT
@@ -74,11 +71,11 @@ class Player(arcade.Sprite):
         super().update()
         if self.state == Player.LANDED:
             if self.dir == Player.LEFT:
-                self.change_x -= Player.MOVEMENT_SPEED
+                self.change_x -= CFG.Player.movement_speed
             elif self.dir == Player.RIGHT:
-                self.change_x += Player.MOVEMENT_SPEED
-        self.change_x = min(self.change_x, Player.MAX_HORIZ_SPEED)
-        self.change_x = max(self.change_x, -Player.MAX_HORIZ_SPEED)
+                self.change_x += CFG.Player.movement_speed
+        self.change_x = min(self.change_x, CFG.Player.max_horiz_speed)
+        self.change_x = max(self.change_x, -CFG.Player.max_horiz_speed)
 
     def collision_check(self, walls):
         hit_list = arcade.geometry.check_for_collision_with_list(self, walls)
@@ -111,7 +108,7 @@ class RegistrationEntry:
         self.right = None
 
     def make_name(self):
-        self.name = random.choice(list(Registration.NAMES.keys()))
+        self.name = random.choice(list(CFG.Registration.names.keys()))
 
     def get_summary(self):
         """Return a string representing the player"""
@@ -137,7 +134,7 @@ class RegistrationEntry:
 
     def finalize(self, game):
         """Register a real player and input handlers with the game when registration is complete"""
-        img = 'img/' + Registration.NAMES[self.name]
+        img = 'img/' + CFG.Registration.names[self.name]
         player = Player(img, self.name)
         game.player_list.append(player)
         game.controller_press[self.flap] = player.on_up
@@ -152,14 +149,6 @@ class RegistrationEntry:
 
 class Registration:
     """Hacky class to store state related to the Registration state. Prob should be a "state" class or something."""
-    NAMES = {
-        'Wayne': 'bat.png',
-        'Quad':  'box.png',
-        'Quackers': 'duck.png',
-        'Glorb': 'spaceship.png',
-        'Clark': 'super.png',
-    }
-
     def __init__(self, win_height):
         self.msg = '...'
         self.last_input = None
@@ -201,8 +190,6 @@ class Registration:
 
 
 class MyGame(arcade.Window):
-    # Constants
-    GOAL_SCORE = 3
     # game states
     WELCOME = 'welcome'
     REGISTRATION = 'registration'
@@ -258,15 +245,14 @@ class MyGame(arcade.Window):
 
     def game_script(self):
         """Generator-based game "script" that drives the game through its main states"""
-        maps = ('map1.tmx', 'map2.tmx')
         self.state = MyGame.WELCOME
         yield from scriptutl.sleep(1.0)
 
         self.state = MyGame.REGISTRATION
         yield from scriptutl.wait_until(lambda: self.reg.done)
 
-        for i in range(3):
-            self.setup(maps[i % len(maps)])
+        for i in range(CFG.Game.rounds):
+            self.setup(CFG.Game.maps[i % len(CFG.Game.maps)])
             self.state = MyGame.PLAY
             yield from scriptutl.wait_until(self.is_game_over)
 
@@ -424,7 +410,7 @@ class MyGame(arcade.Window):
 
     def is_game_over(self):
         scores = [p.score for p in self.player_list]
-        return max(scores) >= MyGame.GOAL_SCORE
+        return max(scores) >= CFG.Game.goal_score
 
     def draw_scores(self):
         labels = ['{}: {}'.format(p.name, p.score) for p in self.player_list]
@@ -432,7 +418,7 @@ class MyGame(arcade.Window):
 
 
 def main():
-    app = MyGame(1280, 720, 'Flapping', False)
+    app = MyGame(1280, 720, 'Flapping', CFG.Window.fullscreen)
     arcade.run()
 
 
