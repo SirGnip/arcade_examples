@@ -160,17 +160,19 @@ class Registration:
         'Clark': 'super.png',
     }
 
-    def __init__(self):
+    def __init__(self, win_height):
         self.msg = '...'
         self.last_input = None
         self.done = False
         self.entries = []
+        self.win_height = win_height
 
     def on_draw(self):
-        arcade.draw_text('Player Registration', 100, 600, arcade.color.WHITE, 40)
-        arcade.draw_text(self.msg, 100, 500, arcade.color.GRAY, 30)
+        arcade.draw_text('Player Registration', 100, self.win_height - 100, arcade.color.WHITE, 40)
+        arcade.draw_text(self.msg, 100, self.win_height - 150, arcade.color.WHITE, 30)
         summary = self.get_summary()
-        arcade.draw_text(summary, 100, 350, arcade.color.GRAY, 25, anchor_y='top')
+        arcade.draw_text(summary, 100, self.win_height - 200, arcade.color.GRAY, 25, anchor_y='top')
+        arcade.draw_text('Press your FLAP key to randomly select a new name', 100, 40, arcade.color.WHITE, 20)
 
     def on_key(self, key):
         matched = False
@@ -212,10 +214,11 @@ class MyGame(arcade.Window):
         if not fullscreen:
             self.set_location(250, 35)
         self.script = self.game_script()
-        self.reg = Registration()
+        self.reg = Registration(height)
         self.reg_script = self.registration_script()
         next(self.script)
         self.window_width = width
+        self.window_height = height
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
 
         self.player_list = arcade.SpriteList()
@@ -324,9 +327,9 @@ class MyGame(arcade.Window):
             self.player_list.draw()
             self.draw_scores()
         elif self.state == MyGame.SCOREBOARD:
-            arcade.draw_text('Scoreboard', 100, 600, arcade.color.GRAY, 60)
+            arcade.draw_text('Scoreboard', 100, self.window_height - 100, arcade.color.GRAY, 60)
             lines = ['{} = {}'.format(p.name, p.score) for p in self.player_list]
-            arcade.draw_text('\n'.join(lines), 100, 200, arcade.color.WHITE, 50)
+            arcade.draw_text('\n'.join(lines), 100, 100, arcade.color.WHITE, 40)
 
     def on_key_press(self, key, modifiers):
         if self.state == MyGame.REGISTRATION:
