@@ -155,10 +155,6 @@ class MyGame(arcade.Window):
         next(self.script)
         self.window_width = width
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
-        self.map = arcade.read_tiled_map('map.tmx')
-        self.walls = arcade.generate_sprites(self.map, 'walls', 1.0)
-        for s in self.walls.sprite_list:
-            s.center_x += 32
 
         self.player_list = arcade.SpriteList()
         self.controller_press = {
@@ -178,7 +174,14 @@ class MyGame(arcade.Window):
                 joy.on_joybutton_release = self.on_joybutton_release
                 joy.on_joyhat_motion = self.on_joyhat
 
-    def setup(self):
+    def setup(self, map_name):
+        # map
+        self.map = arcade.read_tiled_map(map_name)
+        self.walls = arcade.generate_sprites(self.map, 'walls', 1.0)
+        for s in self.walls.sprite_list:
+            s.center_x += 32
+
+        # players
         x = 100
         for p in self.player_list:
             p.center_x = x
@@ -190,6 +193,7 @@ class MyGame(arcade.Window):
 
     def game_script(self):
         """Generator-based game "script" that drives the game through its main states"""
+        maps = ('map1.tmx', 'map2.tmx')
         self.state = MyGame.WELCOME
         yield from scriptutl.sleep(1.0)
 
@@ -197,7 +201,7 @@ class MyGame(arcade.Window):
         yield from scriptutl.wait_until(lambda: self.reg.done)
 
         for i in range(3):
-            self.setup()
+            self.setup(maps[i % len(maps)])
             self.state = MyGame.PLAY
             yield from scriptutl.wait_until(self.is_game_over)
 
