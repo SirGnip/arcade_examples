@@ -111,7 +111,7 @@ class RegistrationEntry:
         self.right = None
 
     def make_name(self):
-        self.name = random.choice(Registration.NAMES)
+        self.name = random.choice(list(Registration.NAMES.keys()))
 
     def get_summary(self):
         """Return a string representing the player"""
@@ -137,7 +137,8 @@ class RegistrationEntry:
 
     def finalize(self, game):
         """Register a real player and input handlers with the game when registration is complete"""
-        player = Player('img/duck.png', self.name)
+        img = 'img/' + Registration.NAMES[self.name]
+        player = Player(img, self.name)
         game.player_list.append(player)
         game.controller_press[self.flap] = player.on_up
         if isinstance(self.left, int) and self.left > 10000:
@@ -151,7 +152,13 @@ class RegistrationEntry:
 
 class Registration:
     """Hacky class to store state related to the Registration state. Prob should be a "state" class or something."""
-    NAMES = ('Mr. Boss', 'Dude', 'Glorb', 'Franky', 'Wayne', 'Bruce', 'Dutchess', 'Flash', 'Slick')
+    NAMES = {
+        'Wayne': 'bat.png',
+        'Quad':  'box.png',
+        'Quackers': 'duck.png',
+        'Glorb': 'spaceship.png',
+        'Clark': 'super.png',
+    }
 
     def __init__(self):
         self.msg = '...'
@@ -317,9 +324,9 @@ class MyGame(arcade.Window):
             self.player_list.draw()
             self.draw_scores()
         elif self.state == MyGame.SCOREBOARD:
-            arcade.draw_text('Scoreboard', 100, 500, arcade.color.GRAY, 60)
+            arcade.draw_text('Scoreboard', 100, 600, arcade.color.GRAY, 60)
             lines = ['{} = {}'.format(p.name, p.score) for p in self.player_list]
-            arcade.draw_text('\n'.join(lines), 100, 300, arcade.color.WHITE, 50)
+            arcade.draw_text('\n'.join(lines), 100, 200, arcade.color.WHITE, 50)
 
     def on_key_press(self, key, modifiers):
         if self.state == MyGame.REGISTRATION:
