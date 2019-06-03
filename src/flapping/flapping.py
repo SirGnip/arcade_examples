@@ -360,6 +360,13 @@ class MyGame(arcade.Window):
                 pass
         elif self.state == MyGame.PLAY:
             self.player_list.update()
+
+            # Prevent partial-pixel positioning, which can cause edge artifacts on player sprites.
+            # This also makes it a bit easier to "stop" a player.
+            for player in self.player_list:
+                player.center_x = int(player.center_x)
+                player.center_y = int(player.center_y)
+
             for p in self.player_list:
                 p.collision_check(self.walls)
             for p in self.player_list:
