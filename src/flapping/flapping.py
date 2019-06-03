@@ -107,6 +107,9 @@ class RegistrationEntry:
         self.left = None
         self.right = None
 
+    def is_key_used(self, key):
+        return key in (self.flap, self.left, self.right)
+
     def make_name(self):
         self.name = random.choice(list(CFG.Registration.names.keys()))
 
@@ -161,22 +164,17 @@ class Registration:
         arcade.draw_text(self.msg, 100, self.win_height - 150, arcade.color.WHITE, 30)
         summary = self.get_summary()
         arcade.draw_text(summary, 100, self.win_height - 200, arcade.color.GRAY, 25, anchor_y='top')
-        arcade.draw_text('Press your FLAP key to randomly select a new name', 100, 40, arcade.color.WHITE, 20)
+        arcade.draw_text('After registering, press FLAP to randomly select a new name.', 100, 40, arcade.color.WHITE, 20)
 
     def on_key(self, key):
         matched = False
         for entry in self.entries:
-            if key == entry.flap:
-                entry.make_name()
+            if entry.is_key_used(key):
                 matched = True
+                if key == entry.flap:
+                    entry.make_name()
         if not matched:
             self.last_input = key
-
-    def on_joybutton(self, joy, button):
-        self.last_input = (id(joy), button)
-
-    def on_joyhat(self, joy, hatx, haty):
-        self.last_input = id(joy)
 
     def get_summary(self):
         summaries = [e.get_summary() for e in self.entries]
@@ -270,7 +268,7 @@ class MyGame(arcade.Window):
         player_num = 0
         while True:
             player_num += 1
-            self.reg.msg = 'Press FLAP to register Player {}... ESC to start game.'.format(player_num)
+            self.reg.msg = 'Press your desired FLAP to register Player {}... ESC to start game.'.format(player_num)
             key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
 
             if key == arcade.key.ESCAPE:
@@ -332,7 +330,7 @@ class MyGame(arcade.Window):
     def on_joybutton_press(self, joy, button):
         key = (id(joy), button)
         if self.state == MyGame.REGISTRATION:
-            self.reg.on_joybutton(joy, button)
+            self.reg.on_key(key)
         elif self.state == MyGame.PLAY:
             if key in self.controller_press:
                 self.controller_press[key]()
@@ -347,7 +345,7 @@ class MyGame(arcade.Window):
         key = id(joy) # theoretically, there could be a collision between this and keyboard values (both are simple ints)
         if self.state == MyGame.REGISTRATION:
             if hatx != 0:
-                self.reg.on_joyhat(joy, hatx, haty)
+                self.reg.on_key(key)
         elif self.state == MyGame.PLAY:
             if key in self.controller_press:
                 self.controller_press[key](hatx, haty)
