@@ -23,7 +23,7 @@ class Player(arcade.Sprite):
         left_texture = arcade.load_texture(img, mirrored=True)
         self.textures.append(right_texture)
         self.textures.append(left_texture)
-        self.set_texture(Player.LEFT)
+        self.set_texture(Player.RIGHT)
 
     def on_up(self):
         if self.state == Player.LANDED:
