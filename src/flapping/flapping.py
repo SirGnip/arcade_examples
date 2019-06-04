@@ -98,6 +98,96 @@ class Player(arcade.Sprite):
         self.change_y = 0.0
 
 
+class Event:
+    """Base abstract class that represents an input event, regardless of device
+
+    This allows mapping from input framework-specific input routines (Arcade and Pyglet)
+    to app-specific actions (ex: moving a player). The goal is to avoid framework-specific
+    input code and logic leaking into app-specific code.
+
+    Any Event can have `.get_id()` called on it to return a value that represents what type
+    of event this is. The value returned is suitable to serve as the key in a dictionary.
+    This mapping often looks something like this
+
+        event_mapping[event.get_id()] = player.move_up  # where player.move_up is a method reference
+    """
+    def get_id(self):
+        """Return value that identifies the type of event (usually a tuple)"""
+        pass
+
+
+class KeyPressEvent(Event):
+    def __init__(self, key, modifiers=None):
+        assert isinstance(key, int)
+        assert isinstance(modifiers, (int, type(None)))
+        self.key = key
+        self.modifiers = modifiers
+
+    def get_id(self):
+        return type(self), self.key
+
+    def __str__(self):
+        return chr(self.key)
+
+    def make_release(self):
+        return KeyReleaseEvent(self.key, self.modifiers)
+
+
+class KeyReleaseEvent(Event):
+    def __init__(self, key, modifiers=None):
+        assert isinstance(key, int)
+        assert isinstance(modifiers, (int, type(None)))
+        self.key = key
+        self.modifiers = modifiers
+
+    def get_id(self):
+        return type(self), self.key
+
+
+class JoyButtonPressEvent(Event):
+    def __init__(self, joy, button):
+        assert isinstance(joy, arcade.joysticks.pyglet.input.base.Joystick)
+        assert isinstance(button, int)
+        self.joy = joy
+        self.button = button
+
+    def get_id(self):
+        return type(self), self.joy, self.button
+
+    def __str__(self):
+        return 'JoyBtn{}'.format(self.button)
+
+    def make_release(self):
+        return JoyButtonReleaseEvent(self.joy, self.button)
+
+
+class JoyButtonReleaseEvent(Event):
+    def __init__(self, joy, button):
+        assert isinstance(joy, arcade.joysticks.pyglet.input.base.Joystick)
+        assert isinstance(button, int)
+        self.joy = joy
+        self.button = button
+
+    def get_id(self):
+        return type(self), self.joy, self.button
+
+
+class JoyHatMotionEvent(Event):
+    def __init__(self, joy, hatx, haty):
+        assert isinstance(joy, arcade.joysticks.pyglet.input.base.Joystick)
+        assert isinstance(hatx, int)
+        assert isinstance(haty, int)
+        self.joy = joy
+        self.hatx = hatx
+        self.haty = haty
+
+    def get_id(self):
+        return type(self), self.joy
+
+    def __str__(self):
+        return 'JoyHat'
+
+
 class RegistrationEntry:
     """Represents a player during the registration phase"""
     def __init__(self):
@@ -107,47 +197,48 @@ class RegistrationEntry:
         self.left = None
         self.right = None
 
-    def is_key_used(self, key):
-        return key in (self.flap, self.left, self.right)
+    def is_event_used(self, event):
+        used_ids = (
+            self.flap.get_id() if self.flap else None,
+            self.left.get_id() if self.left else None,
+            self.right.get_id() if self.right else None,
+        )
+        return event.get_id() in used_ids
 
     def make_name(self):
         self.name = random.choice(list(CFG.Registration.names.keys()))
 
     def get_summary(self):
         """Return a string representing the player"""
-        summary = 'Player:{} FLAP:{} '.format(self.name, self.get_input_label(self.flap))
+        summary = 'Player:{} FLAP:{} '.format(self.name, self.flap)
         if self.left:
-            summary += 'LEFT:{} '.format(self.get_input_label(self.left))
+            summary += 'LEFT:{} '.format(self.left)
         if self.right:
-            summary += 'RIGHT:{}\n'.format(self.get_input_label(self.right))
+            summary += 'RIGHT:{}\n'.format(self.right)
         return summary
 
-    @staticmethod
-    def get_input_label(key):
-        """Given a key, get a description of it (EXTREMELY HACKY!)"""
-        if key is None:
-            return ''
-        elif isinstance(key, int):
-            if key > 10000:
-                return 'joyhat'
-            else:
-                return chr(key)  # keyboard input
-        else:
-            return '{}/{}'.format(key[0], key[1])  # joystick input
-
     def finalize(self, game):
-        """Register a real player and input handlers with the game when registration is complete"""
+        """Create Player objects and input handling dict when registration is complete"""
         img = 'img/' + CFG.Registration.names[self.name]
         player = Player(img, self.name)
         game.player_list.append(player)
-        game.controller_press[self.flap] = player.on_up
-        if isinstance(self.left, int) and self.left > 10000:
-            game.controller_press[self.left] = player.on_joyhat
+
+        # flap
+        game.gameplay_input[self.flap.get_id()] = player.on_up
+
+        if isinstance(self.left, JoyHatMotionEvent):
+            # left & right with joyhat
+            game.gameplay_input[self.left.get_id()] = player.on_joyhat
+            game.gameplay_input[self.right.get_id()] = player.on_joyhat
         else:
-            game.controller_press[self.left] = player.on_left
-            game.controller_release[self.left] = player.on_left_release
-            game.controller_press[self.right] = player.on_right
-            game.controller_release[self.right] = player.on_right_release
+            # left
+            game.gameplay_input[self.left.get_id()] = player.on_left
+            left_release_event_id = self.left.make_release().get_id()
+            game.gameplay_input[left_release_event_id] = player.on_left_release
+            # right
+            game.gameplay_input[self.right.get_id()] = player.on_right
+            right_release_event_id = self.right.make_release().get_id()
+            game.gameplay_input[right_release_event_id] = player.on_right_release
 
 
 class Registration:
@@ -166,15 +257,15 @@ class Registration:
         arcade.draw_text(summary, 100, self.win_height - 200, arcade.color.GRAY, 25, anchor_y='top')
         arcade.draw_text('After registering, press FLAP to randomly select a new name.', 100, 40, arcade.color.WHITE, 20)
 
-    def on_key(self, key):
+    def on_event(self, event):
         matched = False
         for entry in self.entries:
-            if entry.is_key_used(key):
+            if entry.is_event_used(event):
                 matched = True
-                if key == entry.flap:
+                if event.get_id() == entry.flap.get_id():
                     entry.make_name()
         if not matched:
-            self.last_input = key
+            self.last_input = event
 
     def get_summary(self):
         summaries = [e.get_summary() for e in self.entries]
@@ -207,10 +298,8 @@ class MyGame(arcade.Window):
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
 
         self.player_list = arcade.SpriteList()
-        self.controller_press = {
-            arcade.key.ESCAPE: self.close,
-        }
-        self.controller_release = {
+        self.gameplay_input = {
+            KeyPressEvent(arcade.key.ESCAPE).get_id(): self.close,
         }
 
         # gamepad setup
@@ -269,31 +358,30 @@ class MyGame(arcade.Window):
         while True:
             player_num += 1
             self.reg.msg = 'Press your desired FLAP to register Player {}... ESC to start game.'.format(player_num)
-            key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
+            event = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
 
-            if key == arcade.key.ESCAPE:
+            if event.get_id() == KeyPressEvent(arcade.key.ESCAPE).get_id():
                 break
 
             entry = RegistrationEntry()
             self.reg.entries.append(entry)
-            entry.flap = key
+            entry.flap = event
             self.reg.last_input = None
             self.reg.msg = 'Press LEFT for Player {}'.format(player_num)
-            key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
+            event = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
 
-            if isinstance(key, int) and key > 10000:
-                # VERY HACKY way to handle joyhat
-                entry.left = key
-                entry.right = key
+            if isinstance(event, JoyHatMotionEvent):
+                entry.left = event
+                entry.right = event
                 self.reg.last_input = None
                 continue
 
-            entry.left = key
+            entry.left = event
             self.reg.last_input = None
             self.reg.msg = 'Press RIGHT for Player {}'.format(player_num)
-            key = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
+            event = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
 
-            entry.right = key
+            entry.right = event
             self.reg.last_input = None
 
         self.reg.finalize(self)
@@ -316,39 +404,42 @@ class MyGame(arcade.Window):
             arcade.draw_text('\n'.join(lines), 100, 100, arcade.color.WHITE, 40)
 
     def on_key_press(self, key, modifiers):
+        event = KeyPressEvent(key, modifiers)
         if self.state == MyGame.REGISTRATION:
-            self.reg.on_key(key)
+            self.reg.on_event(event)
         elif self.state == MyGame.PLAY:
-            if key in self.controller_press:
-                self.controller_press[key]()
+            if event.get_id() in self.gameplay_input:
+                self.gameplay_input[event.get_id()]()
 
     def on_key_release(self, key, modifiers):
+        event = KeyReleaseEvent(key, modifiers)
         if self.state == MyGame.PLAY:
-            if key in self.controller_release:
-                self.controller_release[key]()
+            if event.get_id() in self.gameplay_input:
+                self.gameplay_input[event.get_id()]()
 
     def on_joybutton_press(self, joy, button):
-        key = (id(joy), button)
+        event = JoyButtonPressEvent(joy, button)
         if self.state == MyGame.REGISTRATION:
-            self.reg.on_key(key)
+            self.reg.on_event(event)
         elif self.state == MyGame.PLAY:
-            if key in self.controller_press:
-                self.controller_press[key]()
+            if event.get_id() in self.gameplay_input:
+                self.gameplay_input[event.get_id()]()
 
     def on_joybutton_release(self, joy, button):
-        key = (id(joy), button)
-        if key in self.controller_release:
-            self.controller_release[key]()
+        event = JoyButtonReleaseEvent(joy, button)
+        if self.state == MyGame.PLAY:
+            if event.get_id() in self.gameplay_input:
+                self.gameplay_input[event.get_id()]()
 
     def on_joyhat(self, joy, hatx, haty):
-        """Many gamepads must be in "analog" mode for the "hat" to report values"""
-        key = id(joy) # theoretically, there could be a collision between this and keyboard values (both are simple ints)
+        # Many gamepads must be in "analog" mode for the "hat" to report values
+        event = JoyHatMotionEvent(joy, hatx, haty)
         if self.state == MyGame.REGISTRATION:
             if hatx != 0:
-                self.reg.on_key(key)
+                self.reg.on_event(event)
         elif self.state == MyGame.PLAY:
-            if key in self.controller_press:
-                self.controller_press[key](hatx, haty)
+            if event.get_id() in self.gameplay_input:
+                self.gameplay_input[event.get_id()](hatx, haty)
 
     def update(self, delta_time):
         if self.state == MyGame.WELCOME:
