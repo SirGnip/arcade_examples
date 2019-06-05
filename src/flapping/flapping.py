@@ -226,7 +226,7 @@ class Registration:
             entry.finalize(self.game)
 
 
-class MyGame(arcade.Window):
+class Game(arcade.Window):
     # game states
     WELCOME = 'welcome'
     REGISTRATION = 'registration'
@@ -279,85 +279,85 @@ class MyGame(arcade.Window):
 
     def game_script(self):
         """Generator-based game "script" that drives the game through its main states"""
-        self.state = MyGame.WELCOME
+        self.state = Game.WELCOME
         yield from scriptutl.sleep(1.0)
 
-        self.state = MyGame.REGISTRATION
+        self.state = Game.REGISTRATION
         yield from scriptutl.wait_until(lambda: self.reg.done)
 
         for i in range(CFG.Game.rounds):
             self.setup(CFG.Game.maps[i % len(CFG.Game.maps)])
-            self.state = MyGame.PLAY
+            self.state = Game.PLAY
             yield from scriptutl.wait_until(self.is_game_over)
 
-            self.state = MyGame.SCOREBOARD
+            self.state = Game.SCOREBOARD
             yield from scriptutl.sleep(2.0)
 
         print('Game over')
 
     def on_draw(self):
         arcade.start_render()
-        if self.state == MyGame.WELCOME:
+        if self.state == Game.WELCOME:
             arcade.draw_text('Flapping Game', 100, 400, arcade.color.GRAY, 100)
             arcade.draw_text('Flapping Game', 105, 405, arcade.color.GREEN, 100)
-        elif self.state == MyGame.REGISTRATION:
+        elif self.state == Game.REGISTRATION:
             self.reg.on_draw()
-        elif self.state == MyGame.PLAY:
+        elif self.state == Game.PLAY:
             self.walls.draw()
             self.player_list.draw()
             self.draw_scores()
-        elif self.state == MyGame.SCOREBOARD:
+        elif self.state == Game.SCOREBOARD:
             arcade.draw_text('Scoreboard', 100, self.window_height - 100, arcade.color.GRAY, 60)
             lines = ['{} = {}'.format(p.name, p.score) for p in self.player_list]
             arcade.draw_text('\n'.join(lines), 100, 100, arcade.color.WHITE, 40)
 
     def on_key_press(self, key, modifiers):
         evt = event.KeyPress(key, modifiers)
-        if self.state == MyGame.REGISTRATION:
+        if self.state == Game.REGISTRATION:
             self.reg.on_event(evt)
-        elif self.state == MyGame.PLAY:
+        elif self.state == Game.PLAY:
             if evt.get_id() in self.gameplay_input:
                 self.gameplay_input[evt.get_id()]()
 
     def on_key_release(self, key, modifiers):
         evt = event.KeyRelease(key, modifiers)
-        if self.state == MyGame.PLAY:
+        if self.state == Game.PLAY:
             if evt.get_id() in self.gameplay_input:
                 self.gameplay_input[evt.get_id()]()
 
     def on_joybutton_press(self, joy, button):
         evt = event.JoyButtonPress(joy, button)
-        if self.state == MyGame.REGISTRATION:
+        if self.state == Game.REGISTRATION:
             self.reg.on_event(evt)
-        elif self.state == MyGame.PLAY:
+        elif self.state == Game.PLAY:
             if evt.get_id() in self.gameplay_input:
                 self.gameplay_input[evt.get_id()]()
 
     def on_joybutton_release(self, joy, button):
         evt = event.JoyButtonRelease(joy, button)
-        if self.state == MyGame.PLAY:
+        if self.state == Game.PLAY:
             if evt.get_id() in self.gameplay_input:
                 self.gameplay_input[evt.get_id()]()
 
     def on_joyhat(self, joy, hatx, haty):
         # Many gamepads must be in "analog" mode for the "hat" to report values
         evt = event.JoyHatMotion(joy, hatx, haty)
-        if self.state == MyGame.REGISTRATION:
+        if self.state == Game.REGISTRATION:
             if hatx != 0:
                 self.reg.on_event(evt)
-        elif self.state == MyGame.PLAY:
+        elif self.state == Game.PLAY:
             if evt.get_id() in self.gameplay_input:
                 self.gameplay_input[evt.get_id()](hatx, haty)
 
     def update(self, delta_time):
-        if self.state == MyGame.WELCOME:
+        if self.state == Game.WELCOME:
             pass
-        elif self.state == MyGame.REGISTRATION:
+        elif self.state == Game.REGISTRATION:
             try:
                 next(self.reg.script)
             except StopIteration:
                 pass
-        elif self.state == MyGame.PLAY:
+        elif self.state == Game.PLAY:
             self.player_list.update()
 
             # Prevent partial-pixel positioning, which can cause edge artifacts on player sprites.
@@ -422,7 +422,7 @@ class MyGame(arcade.Window):
 
 
 def main():
-    app = MyGame(1280, 720, 'Flapping', CFG.Window.fullscreen)
+    app = Game(1280, 720, 'Flapping', CFG.Window.fullscreen)
     arcade.run()
 
 
