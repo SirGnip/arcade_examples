@@ -154,12 +154,49 @@ class RegistrationEntry:
 
 class Registration:
     """Hacky class to store state related to the Registration state. Prob should be a "state" class or something."""
-    def __init__(self, win_height):
+    def __init__(self, game, win_height):
         self.msg = '...'
         self.last_input = None
         self.done = False
         self.entries = []
         self.win_height = win_height
+        self.game = game
+        self.script = self.registration_script()
+
+    def registration_script(self):
+        """Generator-script that creates players and registers their input"""
+        player_num = 0
+        while True:
+            player_num += 1
+            self.msg = 'Press your desired FLAP to register Player {}... ESC to start game.'.format(player_num)
+            evt = yield from scriptutl.wait_until_non_none(lambda: self.last_input)
+
+            if evt.get_id() == event.KeyPress(arcade.key.ESCAPE).get_id():
+                break
+
+            entry = RegistrationEntry()
+            self.entries.append(entry)
+            entry.flap = evt
+            self.last_input = None
+            self.msg = 'Press LEFT for Player {}'.format(player_num)
+            evt = yield from scriptutl.wait_until_non_none(lambda: self.last_input)
+
+            if isinstance(evt, event.JoyHatMotion):
+                entry.left = evt
+                entry.right = evt
+                self.last_input = None
+                continue
+
+            entry.left = evt
+            self.last_input = None
+            self.msg = 'Press RIGHT for Player {}'.format(player_num)
+            evt = yield from scriptutl.wait_until_non_none(lambda: self.last_input)
+
+            entry.right = evt
+            self.last_input = None
+
+        self.finalize()
+        self.done = True
 
     def on_draw(self):
         arcade.draw_text('Player Registration', 100, self.win_height - 100, arcade.color.WHITE, 40)
@@ -184,9 +221,9 @@ class Registration:
             return '<no players registered>'
         return '\n'.join(summaries)
 
-    def finalize(self, game):
+    def finalize(self):
         for entry in self.entries:
-            entry.finalize(game)
+            entry.finalize(self.game)
 
 
 class MyGame(arcade.Window):
@@ -201,8 +238,7 @@ class MyGame(arcade.Window):
         if not fullscreen:
             self.set_location(250, 35)
         self.script = self.game_script()
-        self.reg = Registration(height)
-        self.reg_script = self.registration_script()
+        self.reg = Registration(self, height)
         next(self.script)
         self.window_width = width
         self.window_height = height
@@ -258,45 +294,6 @@ class MyGame(arcade.Window):
             yield from scriptutl.sleep(2.0)
 
         print('Game over')
-
-    def registration_script(self):
-        """Generator-script that creates players and registers their input"""
-        # This is a WIP, experimenting with generator-based scripts to drive sequential logic
-        # EDGE: what happens if there are multiple key presses in one frame? Prob need a queue, not a single value.
-        # BUG: trying to start game with one player
-        # BUG: can register same key multiple times (overwriting previous registration)
-        player_num = 0
-        while True:
-            player_num += 1
-            self.reg.msg = 'Press your desired FLAP to register Player {}... ESC to start game.'.format(player_num)
-            evt = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
-
-            if evt.get_id() == event.KeyPress(arcade.key.ESCAPE).get_id():
-                break
-
-            entry = RegistrationEntry()
-            self.reg.entries.append(entry)
-            entry.flap = evt
-            self.reg.last_input = None
-            self.reg.msg = 'Press LEFT for Player {}'.format(player_num)
-            evt = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
-
-            if isinstance(evt, event.JoyHatMotion):
-                entry.left = evt
-                entry.right = evt
-                self.reg.last_input = None
-                continue
-
-            entry.left = evt
-            self.reg.last_input = None
-            self.reg.msg = 'Press RIGHT for Player {}'.format(player_num)
-            evt = yield from scriptutl.wait_until_non_none(lambda: self.reg.last_input)
-
-            entry.right = evt
-            self.reg.last_input = None
-
-        self.reg.finalize(self)
-        self.reg.done = True
 
     def on_draw(self):
         arcade.start_render()
@@ -357,7 +354,7 @@ class MyGame(arcade.Window):
             pass
         elif self.state == MyGame.REGISTRATION:
             try:
-                next(self.reg_script)
+                next(self.reg.script)
             except StopIteration:
                 pass
         elif self.state == MyGame.PLAY:
