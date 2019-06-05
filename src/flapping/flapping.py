@@ -1,4 +1,5 @@
 import random
+import itertools
 import scriptutl
 import flapping_cfg as CFG
 import event
@@ -103,6 +104,7 @@ class RegistrationEntry:
     """Represents a player during the registration phase"""
     def __init__(self):
         self.name = None
+        self.names = itertools.cycle(sorted(CFG.Registration.names.keys()))
         self.make_name()
         self.flap = None
         self.left = None
@@ -117,7 +119,7 @@ class RegistrationEntry:
         return evt.get_id() in used_ids
 
     def make_name(self):
-        self.name = random.choice(list(CFG.Registration.names.keys()))
+        self.name = next(self.names)
 
     def get_summary(self):
         """Return a string representing the player"""
@@ -203,7 +205,7 @@ class Registration:
         arcade.draw_text(self.msg, 100, self.win_height - 150, arcade.color.WHITE, 30)
         summary = self.get_summary()
         arcade.draw_text(summary, 100, self.win_height - 200, arcade.color.GRAY, 25, anchor_y='top')
-        arcade.draw_text('After registering, press FLAP to randomly select a new name.', 100, 40, arcade.color.WHITE, 20)
+        arcade.draw_text('After registering, press FLAP to cycle through names.', 100, 40, arcade.color.WHITE, 20)
 
     def on_event(self, evt):
         matched = False
