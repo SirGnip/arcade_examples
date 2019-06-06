@@ -14,8 +14,8 @@ class Window:
 
 class Game:
     goal_score = 3
-    rounds = 3
-    maps = ('map1.tmx', 'map2.tmx')
+    rounds = 8
+    maps = ('map1.tmx', 'map2.tmx', 'map3.tmx', 'map4.tmx')
 
 
 class Player:
