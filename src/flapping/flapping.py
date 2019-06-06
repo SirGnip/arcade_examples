@@ -3,6 +3,7 @@ import itertools
 import scriptutl
 import flapping_cfg as CFG
 import event
+import collision
 import arcade
 
 
@@ -80,16 +81,22 @@ class Player(arcade.Sprite):
         self.change_x = max(self.change_x, -CFG.Player.max_horiz_speed)
 
     def collision_check(self, walls):
-        hit_list = arcade.geometry.check_for_collision_with_list(self, walls)
-        if len(hit_list) > 0:
-            for item in hit_list:
-                if self.center_y > item.center_y:
-                    self.bottom = item.top - 1
-                    self.change_y = 0.0
+        hit_wall_list = arcade.geometry.check_for_collision_with_list(self, walls)
+        if len(hit_wall_list) > 0:
+            for wall in hit_wall_list:
+                hit = collision.intersect_AABB(self, wall)
+                if hit is None:
+                    continue
+                if hit.normal[0] > 0 or hit.normal[0] < 0:  # from right or left
+                    self.center_x += hit.delta[0]
+                    self.change_x = 0
+                if hit.normal[1] > 0:  # from top
+                    self.bottom = wall.top - 1
+                    self.change_y = 0
                     self.set_landed()
-                elif self.center_y < item.center_y:
-                    self.top = item.bottom
-                    self.change_y = 0.0
+                if hit.normal[1] < 0:  # from bottom
+                    self.center_y += hit.delta[1]
+                    self.change_y = 0
         else:
             self.set_flying()
 
@@ -98,6 +105,7 @@ class Player(arcade.Sprite):
         self.center_y = 500
         self.change_x = 0.0
         self.change_y = 0.0
+
 
 
 class RegistrationEntry:
