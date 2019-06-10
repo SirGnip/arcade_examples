@@ -5,6 +5,13 @@ class Registration:
         'Quackers': 'duck.png',
         'Glorb': 'spaceship.png',
         'Clark': 'super.png',
+        'Wright': 'biplane.png',
+        'Luna': 'moon.png',
+        'Crystal': 'snowflake.png',
+        'Plumb': 'plunger.png',
+        'Scooter': 'doghouse.png',
+        'Melon': 'watermellon.png',
+        'Centauri': 'star.png'
     }
 
 
