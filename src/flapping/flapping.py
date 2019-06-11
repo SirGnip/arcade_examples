@@ -18,10 +18,11 @@ class Player(arcade.Sprite):
 
     def __init__(self, img, name):
         super().__init__()
-        self.btn_left = False
-        self.btn_right = False
-        self.state = Player.FLYING
-        self.dir = Player.NO_DIRECTION
+        self.btn_left = None
+        self.btn_right = None
+        self.state = None
+        self.dir = None
+        self.setup()
         self.score = 0
         self.name = name
         right_texture = arcade.load_texture(img)
@@ -41,13 +42,11 @@ class Player(arcade.Sprite):
         self.change_y += CFG.Player.jump_speed
 
     def on_left(self):
-        print('left')
         self.btn_left = True
         self.dir = Player.LEFT
         self.set_texture(Player.LEFT)
 
     def on_left_release(self):
-        print('left rel')
         self.btn_left = False
         if self.btn_right:
             self.dir = Player.RIGHT
@@ -56,13 +55,11 @@ class Player(arcade.Sprite):
             self.dir = Player.NO_DIRECTION
 
     def on_right(self):
-        print('right')
         self.btn_right = True
         self.dir = Player.RIGHT
         self.set_texture(Player.RIGHT)
 
     def on_right_release(self):
-        print('right rel')
         self.btn_right = False
         if self.btn_left:
             self.dir = Player.LEFT
@@ -118,7 +115,16 @@ class Player(arcade.Sprite):
         else:
             self.set_flying()
 
+    def setup(self):
+        self.btn_left = False
+        self.btn_right = False
+        self.state = Player.FLYING
+        self.dir = Player.NO_DIRECTION
+        self.change_x = 0.0
+        self.change_y = 0.0
+
     def respawn(self):
+        self.setup()
         self.center_x = random.randint(200, 1000)
         self.center_y = 500
         self.change_x = 0.0
@@ -298,6 +304,7 @@ class Game(arcade.Window):
         # players
         x = 100
         for p in self.player_list:
+            p.setup()
             p.center_x = x
             p.center_y = 120
             p.change_x = 0.0
