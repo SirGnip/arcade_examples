@@ -18,6 +18,8 @@ class Player(arcade.Sprite):
 
     def __init__(self, img, name):
         super().__init__()
+        self.btn_left = False
+        self.btn_right = False
         self.state = Player.FLYING
         self.dir = Player.NO_DIRECTION
         self.score = 0
@@ -39,18 +41,34 @@ class Player(arcade.Sprite):
         self.change_y += CFG.Player.jump_speed
 
     def on_left(self):
+        print('left')
+        self.btn_left = True
         self.dir = Player.LEFT
         self.set_texture(Player.LEFT)
 
     def on_left_release(self):
-        self.dir = Player.NO_DIRECTION
+        print('left rel')
+        self.btn_left = False
+        if self.btn_right:
+            self.dir = Player.RIGHT
+            self.set_texture(Player.RIGHT)
+        else:
+            self.dir = Player.NO_DIRECTION
 
     def on_right(self):
+        print('right')
+        self.btn_right = True
         self.dir = Player.RIGHT
         self.set_texture(Player.RIGHT)
 
     def on_right_release(self):
-        self.dir = Player.NO_DIRECTION
+        print('right rel')
+        self.btn_right = False
+        if self.btn_left:
+            self.dir = Player.LEFT
+            self.set_texture(Player.LEFT)
+        else:
+            self.dir = Player.NO_DIRECTION
 
     def on_joyhat(self, hatx, haty):
         if hatx < 0:
