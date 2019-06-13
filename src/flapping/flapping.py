@@ -202,9 +202,17 @@ class Registration:
         player_num = 0
         while True:
             player_num += 1
-            self.msg = 'Press your desired FLAP to register Player {}... ESC to start game.'.format(player_num)
+            self.msg = 'Press your desired FLAP to register Player {}...\nESC to start game. F5 to clear player list.'.format(player_num)
             evt = yield from scriptutl.wait_until_non_none(lambda: self.last_input)
 
+            # clear player list
+            if evt.get_id() == event.KeyPress(arcade.key.F5).get_id():
+                self.entries = []
+                self.last_input = None
+                player_num = 0
+                continue
+
+            # end registration
             if evt.get_id() == event.KeyPress(arcade.key.ESCAPE).get_id():
                 break
 
@@ -233,10 +241,10 @@ class Registration:
         self.done = True
 
     def on_draw(self):
-        arcade.draw_text('Player Registration', 100, self.win_height - 100, arcade.color.WHITE, 40)
-        arcade.draw_text(self.msg, 100, self.win_height - 150, arcade.color.WHITE, 30)
+        arcade.draw_text('Player Registration', 25, self.win_height - 75, arcade.color.WHITE, 40)
+        arcade.draw_text(self.msg, 25, self.win_height - 175, arcade.color.WHITE, 30)
         summary = self.get_summary()
-        arcade.draw_text(summary, 100, self.win_height - 200, arcade.color.GRAY, 25, anchor_y='top')
+        arcade.draw_text(summary, 25, self.win_height - 200, arcade.color.GRAY, 25, anchor_y='top')
         arcade.draw_text('After registering, press FLAP to cycle through names.', 100, 40, arcade.color.WHITE, 20)
 
     def on_event(self, evt):
