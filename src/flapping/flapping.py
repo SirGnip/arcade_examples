@@ -374,8 +374,9 @@ class Game(arcade.Window):
             self.player_list.draw()
             self.draw_scores()
         elif self.state == Game.SCOREBOARD:
+            sorted_player_list = sorted(self.player_list, key=lambda p: p.score, reverse=True)
             arcade.draw_text('Scoreboard', 100, self.window_height - 100, arcade.color.GRAY, 60)
-            lines = ['{} = {}'.format(p.name, p.score) for p in self.player_list]
+            lines = ['{} = {}'.format(p.name, p.score) for p in sorted_player_list]
             arcade.draw_text('\n'.join(lines), 100, 200, arcade.color.WHITE, 38)
             if self.scoreboard_sub_state == 'ready':
                 arcade.draw_text('Press any input to continue...', 100, 50, arcade.color.GRAY, 24)
