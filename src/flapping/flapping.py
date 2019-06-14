@@ -1,5 +1,7 @@
 import random
 import itertools
+import traceback
+import pickle
 import scriptutl
 import flapping_cfg as CFG
 import event
@@ -199,7 +201,9 @@ class Registration:
 
     def registration_script(self):
         """Generator-script that creates players and registers their input"""
-        player_num = 0
+        self.load_players()
+        player_num = len(self.entries)
+
         while True:
             player_num += 1
             self.msg = 'Press your desired FLAP to register Player {}...\nESC to start game. F5 to clear player list.'.format(player_num)
@@ -264,8 +268,24 @@ class Registration:
         return '\n'.join(summaries)
 
     def finalize(self):
+        self.save_players()
         for entry in self.entries:
             entry.finalize(self.game)
+
+    def save_players(self):
+        with open(CFG.Player.filename, 'wb') as out_file:
+            print('Saving player list to {}'.format(CFG.Player.filename))
+            pickle.dump(self.entries, out_file)
+
+    def load_players(self):
+        try:
+            print('Attempting to load last players from {}'.format(CFG.Player.filename))
+            with open(CFG.Player.filename, 'rb') as in_file:
+                self.entries = pickle.load(in_file)
+                print('Loaded {} players'.format(len(self.entries)))
+        except Exception as exc:
+            print('WARNING: Problem loading previous player list from file:"{}" so starting with an empty player list. Exception: {}'.format(CFG.Player.filename, type(exc)))
+            traceback.print_exc()
 
 
 class Game(arcade.Window):

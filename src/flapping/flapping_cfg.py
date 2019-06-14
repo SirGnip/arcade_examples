@@ -30,3 +30,4 @@ class Player:
     flap_horiz_impulse = 1.5
     max_horiz_speed = 7.0
     jump_speed = 3
+    filename = 'flapping.last_players'
