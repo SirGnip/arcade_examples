@@ -354,7 +354,11 @@ class Game(arcade.Window):
             yield from scriptutl.wait_until(self.is_game_over)
 
             self.state = Game.SCOREBOARD
+            # blackout input briefly so thtat any final, furious button mashing doesn't unintentionally skip the scoreboard
+            self.scoreboard_sub_state = 'blackout'
             yield from scriptutl.sleep(2.0)
+            self.scoreboard_sub_state = 'ready'
+            yield from scriptutl.wait_until(lambda: self.scoreboard_sub_state == 'done')
 
         print('Game over')
 
@@ -372,7 +376,9 @@ class Game(arcade.Window):
         elif self.state == Game.SCOREBOARD:
             arcade.draw_text('Scoreboard', 100, self.window_height - 100, arcade.color.GRAY, 60)
             lines = ['{} = {}'.format(p.name, p.score) for p in self.player_list]
-            arcade.draw_text('\n'.join(lines), 100, 100, arcade.color.WHITE, 40)
+            arcade.draw_text('\n'.join(lines), 100, 200, arcade.color.WHITE, 38)
+            if self.scoreboard_sub_state == 'ready':
+                arcade.draw_text('Press any input to continue...', 100, 50, arcade.color.GRAY, 24)
 
     def on_key_press(self, key, modifiers):
         evt = event.KeyPress(key, modifiers)
@@ -381,6 +387,9 @@ class Game(arcade.Window):
         elif self.state == Game.PLAY:
             if evt.get_id() in self.gameplay_input:
                 self.gameplay_input[evt.get_id()]()
+        elif self.state == Game.SCOREBOARD and self.scoreboard_sub_state == 'ready':
+            if evt.get_id() in self.gameplay_input:
+                self.scoreboard_sub_state = 'done'
 
     def on_key_release(self, key, modifiers):
         evt = event.KeyRelease(key, modifiers)
@@ -395,6 +404,9 @@ class Game(arcade.Window):
         elif self.state == Game.PLAY:
             if evt.get_id() in self.gameplay_input:
                 self.gameplay_input[evt.get_id()]()
+        elif self.state == Game.SCOREBOARD and self.scoreboard_sub_state == 'ready':
+            if evt.get_id() in self.gameplay_input:
+                self.scoreboard_sub_state = 'done'
 
     def on_joybutton_release(self, joy, button):
         evt = event.JoyButtonRelease(joy, button)
