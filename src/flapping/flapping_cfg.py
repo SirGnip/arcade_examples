@@ -22,7 +22,7 @@ class Window:
 class Game:
     goal_score = 3
     rounds = 8
-    maps = ('map1.tmx', 'map2.tmx', 'map3.tmx', 'map4.tmx')
+    maps = ('map1.tmx', 'map2.tmx', 'map3.tmx', 'map4.tmx', 'map5.tmx')
 
 
 class Player:

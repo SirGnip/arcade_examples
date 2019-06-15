@@ -326,6 +326,7 @@ class Game(arcade.Window):
 
     def setup(self, map_name):
         # map
+        print('Loading map: {}'.format(map_name))
         self.map = arcade.read_tiled_map(map_name)
         self.walls = arcade.generate_sprites(self.map, 'walls', 1.0)
         for s in self.walls.sprite_list:
