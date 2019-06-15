@@ -9,6 +9,9 @@ import collision
 import arcade
 
 
+HEADER_COLOR = arcade.color.PEACH_ORANGE
+BODY_COLOR = arcade.color.WHITE
+
 class Player(arcade.Sprite):
     # state
     LANDED = 0
@@ -245,11 +248,11 @@ class Registration:
         self.done = True
 
     def on_draw(self):
-        arcade.draw_text('Player Registration', 25, self.win_height - 75, arcade.color.WHITE, 40)
-        arcade.draw_text(self.msg, 25, self.win_height - 175, arcade.color.WHITE, 30)
+        arcade.draw_text('Player Registration', 25, self.win_height - 75, HEADER_COLOR, 40)
+        arcade.draw_text(self.msg, 25, self.win_height - 175, HEADER_COLOR, 30)
         summary = self.get_summary()
-        arcade.draw_text(summary, 25, self.win_height - 200, arcade.color.GRAY, 25, anchor_y='top')
-        arcade.draw_text('After registering, press FLAP to cycle through names.', 100, 40, arcade.color.WHITE, 20)
+        arcade.draw_text(summary, 25, self.win_height - 200, BODY_COLOR, 25, anchor_y='top')
+        arcade.draw_text('After registering, press FLAP to cycle through names.', 100, 40, HEADER_COLOR, 20)
 
     def on_event(self, evt):
         matched = False
@@ -356,7 +359,7 @@ class Game(arcade.Window):
             self.state = Game.SCOREBOARD
             # blackout input briefly so thtat any final, furious button mashing doesn't unintentionally skip the scoreboard
             self.scoreboard_sub_state = 'blackout'
-            yield from scriptutl.sleep(2.0)
+            yield from scriptutl.sleep(3.0)
             self.scoreboard_sub_state = 'ready'
             yield from scriptutl.wait_until(lambda: self.scoreboard_sub_state == 'done')
 
@@ -375,11 +378,11 @@ class Game(arcade.Window):
             self.draw_scores()
         elif self.state == Game.SCOREBOARD:
             sorted_player_list = sorted(self.player_list, key=lambda p: p.score, reverse=True)
-            arcade.draw_text('Scoreboard', 100, self.window_height - 100, arcade.color.GRAY, 60)
+            arcade.draw_text('Scoreboard', 100, self.window_height - 100, HEADER_COLOR, 60)
             lines = ['{} = {}'.format(p.name, p.score) for p in sorted_player_list]
-            arcade.draw_text('\n'.join(lines), 100, 200, arcade.color.WHITE, 38)
+            arcade.draw_text('\n'.join(lines), 100, 200, BODY_COLOR, 38)
             if self.scoreboard_sub_state == 'ready':
-                arcade.draw_text('Press any input to continue...', 100, 50, arcade.color.GRAY, 24)
+                arcade.draw_text('Press any input to continue...', 100, 50, HEADER_COLOR, 24)
 
     def on_key_press(self, key, modifiers):
         evt = event.KeyPress(key, modifiers)
