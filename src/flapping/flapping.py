@@ -131,10 +131,9 @@ class Player(arcade.Sprite):
     def respawn(self):
         self.setup()
         self.center_x = random.randint(200, 1000)
-        self.center_y = 500
+        self.center_y = 75
         self.change_x = 0.0
         self.change_y = 0.0
-
 
 
 class RegistrationEntry:
