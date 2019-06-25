@@ -7,7 +7,7 @@ import flapping_cfg as CFG
 import event
 import collision
 import arcade
-
+import pyglet
 
 HEADER_COLOR = arcade.color.PEACH_ORANGE
 BODY_COLOR = arcade.color.WHITE
@@ -275,15 +275,35 @@ class Registration:
             entry.finalize(self.game)
 
     def save_players(self):
+        def get_persistent_id(obj):
+            """Pickle pyglet's Joystick object by simply saving index into list"""
+            if isinstance(obj, pyglet.input.base.Joystick):
+                joy_idx = self.game.joysticks.index(obj)
+                print('  Pickling joystick idx #{} {}'.format(joy_idx, obj.device))
+                return joy_idx
+            return None
+
         with open(CFG.Player.filename, 'wb') as out_file:
             print('Saving player list to {}'.format(CFG.Player.filename))
-            pickle.dump(self.entries, out_file)
+            pickler = pickle.Pickler(out_file)
+            pickler.persistent_id = get_persistent_id
+            pickler.dump(self.entries)
 
     def load_players(self):
+        def persistent_load(persist_id):
+            """Unpickle pyglet's Joystick object by using index to lookup joystick in list"""
+            print('  Unpickling object using persistent_id:', persist_id)
+            joystick_idx = persist_id
+            joy = self.game.joysticks[joystick_idx]
+            print('  Unpickling joystick:', joy.device)
+            return joy
+
         try:
             print('Attempting to load last players from {}'.format(CFG.Player.filename))
             with open(CFG.Player.filename, 'rb') as in_file:
-                self.entries = pickle.load(in_file)
+                unpickler = pickle.Unpickler(in_file)
+                unpickler.persistent_load = persistent_load
+                self.entries = unpickler.load()
                 print('Loaded {} players'.format(len(self.entries)))
         except Exception as exc:
             print('WARNING: Problem loading previous player list from file:"{}" so starting with an empty player list. Exception: {}'.format(CFG.Player.filename, type(exc)))
@@ -314,10 +334,9 @@ class Game(arcade.Window):
         }
 
         # gamepad setup
-        joysticks = arcade.joysticks.get_game_controllers()
-        self.joy = None
-        if joysticks:
-            for joy in joysticks:
+        self.joysticks = arcade.joysticks.get_game_controllers()
+        if self.joysticks:
+            for joy in self.joysticks:
                 print('Found joystick: ', joy.device)
                 joy.open()
                 joy.on_joybutton_press = self.on_joybutton_press
