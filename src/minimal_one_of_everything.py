@@ -1,5 +1,5 @@
 """
-Minimal app that makes minimal use of sever key features of arcade
+Minimal app that makes minimal use of several key features of arcade
 """
 import arcade
 

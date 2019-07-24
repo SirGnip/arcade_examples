@@ -290,7 +290,7 @@ class Registration:
             pickler.dump(self.entries)
 
     def load_players(self):
-        def persistent_load(persist_id):
+        def load_from_persistent_id(persist_id):
             """Unpickle pyglet's Joystick object by using index to lookup joystick in list"""
             print('  Unpickling object using persistent_id:', persist_id)
             joystick_idx = persist_id
@@ -302,7 +302,7 @@ class Registration:
             print('Attempting to load last players from {}'.format(CFG.Player.filename))
             with open(CFG.Player.filename, 'rb') as in_file:
                 unpickler = pickle.Unpickler(in_file)
-                unpickler.persistent_load = persistent_load
+                unpickler.persistent_load = load_from_persistent_id
                 self.entries = unpickler.load()
                 print('Loaded {} players'.format(len(self.entries)))
         except Exception as exc:
