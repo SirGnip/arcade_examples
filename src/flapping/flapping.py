@@ -317,10 +317,17 @@ class Game(arcade.Window):
     PLAY = 'gameplay'
     SCOREBOARD = 'scoreboard'
 
+    def on_resize(self, width: float, height: float):
+        # prevent arcade.Window.on_resize from changing the viewport on startup
+        pass
+
     def __init__(self, width, height, title, fullscreen):
         super().__init__(width, height, title, fullscreen)
-        if not fullscreen:
+        if self.fullscreen:
+            self.set_viewport(0, width, 0, height)  # scale viewport to full screen (doesn't preserve aspect ratio)
+        else:
             self.set_location(250, 35)
+
         self.script = self.game_script()
         self.reg = Registration(self, height)
         next(self.script)
