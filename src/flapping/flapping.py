@@ -201,6 +201,14 @@ class Registration:
         self.game = game
         self.script = self.registration_script()
 
+    @staticmethod
+    def _get_event_skip_escape_key(evt):
+        """Used by scriptutil.wait_until_non_none() to block until a non-ESC key has been pressed"""
+        if evt is not None:
+            if evt.get_id() == event.KeyPress(arcade.key.ESCAPE).get_id():
+                return None
+        return evt
+
     def registration_script(self):
         """Generator-script that creates players and registers their input"""
         self.load_players()
@@ -227,7 +235,7 @@ class Registration:
             entry.flap = evt
             self.last_input = None
             self.msg = 'Press LEFT for Player {}'.format(player_num)
-            evt = yield from scriptutl.wait_until_non_none(lambda: self.last_input)
+            evt = yield from scriptutl.wait_until_non_none(lambda: self._get_event_skip_escape_key(self.last_input))
 
             if isinstance(evt, event.JoyHatMotion):
                 entry.left = evt
@@ -238,7 +246,7 @@ class Registration:
             entry.left = evt
             self.last_input = None
             self.msg = 'Press RIGHT for Player {}'.format(player_num)
-            evt = yield from scriptutl.wait_until_non_none(lambda: self.last_input)
+            evt = yield from scriptutl.wait_until_non_none(lambda: self._get_event_skip_escape_key(self.last_input))
 
             entry.right = evt
             self.last_input = None
