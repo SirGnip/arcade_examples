@@ -228,7 +228,12 @@ class Registration:
 
             # end registration
             if evt.get_id() == event.KeyPress(arcade.key.ESCAPE).get_id():
-                break
+                self.last_input = None
+                if len(self.entries) > 0:
+                    break
+                else:
+                    print('WARNING: Game can not start with no players')
+                    continue
 
             entry = RegistrationEntry()
             self.entries.append(entry)
