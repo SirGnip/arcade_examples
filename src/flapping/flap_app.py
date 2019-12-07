@@ -25,12 +25,12 @@ class Player(arcade.Sprite):
     LEFT = 1
     NO_DIRECTION = 2
 
-    def __init__(self, img, name):
+    def __init__(self, img: str, name: str):
         super().__init__()
-        self.btn_left = None
-        self.btn_right = None
-        self.state = None
-        self.dir = None
+        self.btn_left = False
+        self.btn_right = False
+        self.state: int = Player.FLYING
+        self.dir: int = Player.NO_DIRECTION
         self.setup()
         self.score = 0
         self.name = name
@@ -40,7 +40,7 @@ class Player(arcade.Sprite):
         self.textures.append(left_texture)
         self.set_texture(Player.RIGHT)
 
-    def on_up(self):
+    def on_up(self) -> None:
         if self.state == Player.LANDED:
             self.center_y += 1
         elif self.state == Player.FLYING:
@@ -50,12 +50,12 @@ class Player(arcade.Sprite):
                 self.change_x += CFG.Player.flap_horiz_impulse
         self.change_y += CFG.Player.jump_speed
 
-    def on_left(self):
+    def on_left(self) -> None:
         self.btn_left = True
         self.dir = Player.LEFT
         self.set_texture(Player.LEFT)
 
-    def on_left_release(self):
+    def on_left_release(self) -> None:
         self.btn_left = False
         if self.btn_right:
             self.dir = Player.RIGHT
@@ -63,12 +63,12 @@ class Player(arcade.Sprite):
         else:
             self.dir = Player.NO_DIRECTION
 
-    def on_right(self):
+    def on_right(self) -> None:
         self.btn_right = True
         self.dir = Player.RIGHT
         self.set_texture(Player.RIGHT)
 
-    def on_right_release(self):
+    def on_right_release(self) -> None:
         self.btn_right = False
         if self.btn_left:
             self.dir = Player.LEFT
@@ -76,7 +76,7 @@ class Player(arcade.Sprite):
         else:
             self.dir = Player.NO_DIRECTION
 
-    def on_joyhat(self, hatx, haty):
+    def on_joyhat(self, hatx, haty) -> None:
         if hatx < 0:
             self.dir = Player.LEFT
             self.set_texture(Player.LEFT)
@@ -86,7 +86,7 @@ class Player(arcade.Sprite):
         else:
             self.dir = Player.NO_DIRECTION
 
-    def set_landed(self):
+    def set_landed(self) -> None:
         if self.state == Player.FLYING:
             self.state = Player.LANDED
 
@@ -543,7 +543,7 @@ class Game(arcade.Window):
         arcade.draw_text('    '.join(labels), 50, 5, arcade.color.WHITE, 20)
 
 
-def main():
+def main() -> None:
     os.chdir(os.path.dirname(os.path.abspath(__file__)))  # make working dir relative to location of code
     app = Game(1280, 720, 'Flapping', CFG.Window.fullscreen)
     arcade.run()
