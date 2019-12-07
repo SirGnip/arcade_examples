@@ -1,3 +1,4 @@
+import os
 import random
 import itertools
 import traceback
@@ -543,6 +544,7 @@ class Game(arcade.Window):
 
 
 def main():
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))  # make working dir relative to location of code
     app = Game(1280, 720, 'Flapping', CFG.Window.fullscreen)
     arcade.run()
 
