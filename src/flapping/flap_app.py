@@ -2,15 +2,18 @@ import random
 import itertools
 import traceback
 import pickle
-import scriptutl
-import flapping_cfg as CFG
-import event
-import collision
+
 import arcade
 import pyglet
 
+from flapping import scriptutl
+from flapping import flapping_cfg as CFG
+from flapping import event
+from flapping import collision
+
 HEADER_COLOR = arcade.color.PEACH_ORANGE
 BODY_COLOR = arcade.color.WHITE
+
 
 class Player(arcade.Sprite):
     # state

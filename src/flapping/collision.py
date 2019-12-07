@@ -1,5 +1,6 @@
-import util
 """Utilities for examining collisions between objects"""
+
+from flapping import util
 
 
 class Hit:
