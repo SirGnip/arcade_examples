@@ -114,13 +114,13 @@ class Player(arcade.Sprite):
                 if hit.normal[0] > 0 or hit.normal[0] < 0:  # from right or left
                     self.center_x += hit.delta[0]
                     self.change_x = 0
-                if hit.normal[1] > 0:  # from top
+                if hit.normal[1] > 0:  # hit top of wall
                     self.bottom = wall.top - 1
                     self.change_y = 0
                     self.set_landed()
-                if hit.normal[1] < 0:  # from bottom
+                if hit.normal[1] < 0:  # hit bottom of wall
                     self.center_y += hit.delta[1]
-                    self.change_y = 0
+                    self.change_y = -3.0
         else:
             self.set_flying()
 
@@ -347,7 +347,7 @@ class Game(arcade.Window):
 
         self.script = self.game_script()
         self.reg = Registration(self, height)
-        next(self.script)
+
         self.window_width = width
         self.window_height = height
         arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
@@ -366,6 +366,8 @@ class Game(arcade.Window):
                 joy.on_joybutton_press = self.on_joybutton_press
                 joy.on_joybutton_release = self.on_joybutton_release
                 joy.on_joyhat_motion = self.on_joyhat
+
+        next(self.script)  # step gameplay script when everything is initialized
 
     def setup(self, map_name):
         # map
@@ -388,11 +390,16 @@ class Game(arcade.Window):
 
     def game_script(self):
         """Generator-based game "script" that drives the game through its main states"""
-        self.state = Game.WELCOME
-        yield from scriptutl.sleep(1.0)
+        if CFG.Game.debug:
+            # quick start game w/ no welcome or registration
+            self.reg.load_players()
+            self.reg.finalize()
+        else:
+            self.state = Game.WELCOME
+            yield from scriptutl.sleep(1.0)
 
-        self.state = Game.REGISTRATION
-        yield from scriptutl.wait_until(lambda: self.reg.done)
+            self.state = Game.REGISTRATION
+            yield from scriptutl.wait_until(lambda: self.reg.done)
 
         for i in range(CFG.Game.rounds):
             self.setup(CFG.Game.maps[i % len(CFG.Game.maps)])
