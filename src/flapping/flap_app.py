@@ -104,7 +104,12 @@ class Player(arcade.Sprite):
         self.change_x = min(self.change_x, CFG.Player.max_horiz_speed)
         self.change_x = max(self.change_x, -CFG.Player.max_horiz_speed)
 
-    def collision_check(self, walls):
+    def killers_collision_check(self, killers):
+        hit_list = arcade.geometry.check_for_collision_with_list(self, killers)
+        if len(hit_list) > 0:
+            self.respawn()
+
+    def wall_collision_check(self, walls):
         hit_wall_list = arcade.geometry.check_for_collision_with_list(self, walls)
         if len(hit_wall_list) > 0:
             for wall in hit_wall_list:
@@ -372,10 +377,9 @@ class Game(arcade.Window):
     def setup(self, map_name):
         # map
         print('Loading map: {}'.format(map_name))
-        self.map = arcade.read_tiled_map(map_name)
-        self.walls = arcade.generate_sprites(self.map, 'walls', 1.0)
-        for s in self.walls.sprite_list:
-            s.center_x += 32
+        self.map = arcade.tilemap.read_tmx(map_name)
+        self.walls = arcade.tilemap.process_layer(self.map, 'walls', 1.0)
+        self.killers = arcade.tilemap.process_layer(self.map, 'kill', 1.0)
 
         # players
         x = 100
@@ -424,6 +428,7 @@ class Game(arcade.Window):
             self.reg.on_draw()
         elif self.state == Game.PLAY:
             self.walls.draw()
+            self.killers.draw()
             self.player_list.draw()
             self.draw_scores()
         elif self.state == Game.SCOREBOARD:
@@ -496,7 +501,8 @@ class Game(arcade.Window):
                 player.center_y = int(player.center_y)
 
             for p in self.player_list:
-                p.collision_check(self.walls)
+                p.killers_collision_check(self.killers)
+                p.wall_collision_check(self.walls)
             for p in self.player_list:
                 p.change_y -= 0.2  # gravity
                 if p.center_x < 0:
