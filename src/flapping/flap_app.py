@@ -398,6 +398,7 @@ class Game(arcade.Window):
             # quick start game w/ no welcome or registration
             self.reg.load_players()
             self.reg.finalize()
+            CFG.Game.goal_score = 1
         else:
             self.state = Game.WELCOME
             yield from scriptutl.sleep(1.0)
@@ -413,7 +414,7 @@ class Game(arcade.Window):
             self.state = Game.SCOREBOARD
             # blackout input briefly so thtat any final, furious button mashing doesn't unintentionally skip the scoreboard
             self.scoreboard_sub_state = 'blackout'
-            yield from scriptutl.sleep(3.0)
+            yield from scriptutl.sleep(1.0)
             self.scoreboard_sub_state = 'ready'
             yield from scriptutl.wait_until(lambda: self.scoreboard_sub_state == 'done')
 
