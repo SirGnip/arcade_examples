@@ -29,6 +29,7 @@ class Game:
 class Player:
     movement_speed = 0.15  # pixels per frame
     flap_horiz_impulse = 1.5
-    max_horiz_speed = 7.0
+    max_horiz_speed = 5.0
+    max_vert_speed = 7.0
     jump_speed = 3
     filename = 'flapping.last_players'

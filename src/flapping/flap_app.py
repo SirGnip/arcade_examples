@@ -103,6 +103,8 @@ class Player(arcade.Sprite):
                 self.change_x += CFG.Player.movement_speed
         self.change_x = min(self.change_x, CFG.Player.max_horiz_speed)
         self.change_x = max(self.change_x, -CFG.Player.max_horiz_speed)
+        self.change_y = min(self.change_y, CFG.Player.max_vert_speed)
+        self.change_y = max(self.change_y, -CFG.Player.max_vert_speed)
 
     def killers_collision_check(self, killers):
         hit_list = arcade.geometry.check_for_collision_with_list(self, killers)
