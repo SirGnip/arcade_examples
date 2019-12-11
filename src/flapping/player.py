@@ -2,7 +2,6 @@ import random
 
 import arcade
 
-from flapping import collision
 from flapping import flapping_cfg as CFG
 
 
@@ -99,32 +98,6 @@ class Player(arcade.Sprite):
         self.change_x = max(self.change_x, -CFG.Player.max_horiz_speed)
         self.change_y = min(self.change_y, CFG.Player.max_vert_speed)
         self.change_y = max(self.change_y, -CFG.Player.max_vert_speed)
-
-    def killers_collision_check(self, game: 'Game', killers):
-        hit_list = arcade.geometry.check_for_collision_with_list(self, killers)
-        if len(hit_list) > 0:
-            self.score += CFG.Player.death_score
-            game.do_die(self)
-
-    def wall_collision_check(self, walls):
-        hit_wall_list = arcade.geometry.check_for_collision_with_list(self, walls)
-        if len(hit_wall_list) > 0:
-            for wall in hit_wall_list:
-                hit = collision.intersect_AABB(self, wall)
-                if hit is None:
-                    continue
-                if hit.normal[0] > 0 or hit.normal[0] < 0:  # from right or left
-                    self.center_x += hit.delta[0]
-                    self.change_x = 0
-                if hit.normal[1] > 0:  # hit top of wall
-                    self.bottom = wall.top - 1
-                    self.change_y = 0
-                    self.set_landed()
-                if hit.normal[1] < 0:  # hit bottom of wall
-                    self.center_y += hit.delta[1]
-                    self.change_y = -3.0
-        else:
-            self.set_flying()
 
     def setup(self):
         self.btn_left = False

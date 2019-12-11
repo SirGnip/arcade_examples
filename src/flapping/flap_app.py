@@ -6,6 +6,7 @@ from common.timers import Timers
 from flapping import scriptutl
 from flapping import flapping_cfg as CFG
 from flapping import event
+from flapping import collision
 from flapping.player import Player
 from flapping.registration import Registration
 
@@ -182,8 +183,8 @@ class Game(arcade.Window):
                 player.center_y = int(player.center_y)
 
             for p in self.player_list:
-                p.killers_collision_check(self, self.killers)
-                p.wall_collision_check(self.walls)
+                self.check_killer_tiles_collision(p, self.killers)
+                self.check_wall_tiles_collision(p, self.walls)
             for p in self.player_list:
                 p.change_y -= 0.2  # gravity
                 if p.center_x < 0:
@@ -195,6 +196,32 @@ class Game(arcade.Window):
             next(self.script)
         except StopIteration:
             self.close()
+
+    def check_killer_tiles_collision(self, player: Player, killers):
+        hit_list = arcade.geometry.check_for_collision_with_list(player, killers)
+        if len(hit_list) > 0:
+            player.score += CFG.Player.death_score
+            self.do_die(player)
+
+    def check_wall_tiles_collision(self, player: Player, walls):
+        hit_wall_list = arcade.geometry.check_for_collision_with_list(player, walls)
+        if len(hit_wall_list) > 0:
+            for wall in hit_wall_list:
+                hit = collision.intersect_AABB(player, wall)
+                if hit is None:
+                    continue
+                if hit.normal[0] > 0 or hit.normal[0] < 0:  # from right or left
+                    player.center_x += hit.delta[0]
+                    player.change_x = 0
+                if hit.normal[1] > 0:  # hit top of wall
+                    player.bottom = wall.top - 1
+                    player.change_y = 0
+                    player.set_landed()
+                if hit.normal[1] < 0:  # hit bottom of wall
+                    player.center_y += hit.delta[1]
+                    player.change_y = -3.0
+        else:
+            player.set_flying()
 
     def check_player_collision(self) -> None:
         p1: Player
