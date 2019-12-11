@@ -111,10 +111,11 @@ class Player(arcade.Sprite):
         self.change_y = min(self.change_y, CFG.Player.max_vert_speed)
         self.change_y = max(self.change_y, -CFG.Player.max_vert_speed)
 
-    def killers_collision_check(self, killers):
+    def killers_collision_check(self, game: 'Game', killers):
         hit_list = arcade.geometry.check_for_collision_with_list(self, killers)
         if len(hit_list) > 0:
-            self.respawn()
+            self.score += CFG.Player.death_score
+            game.do_die(self)
 
     def wall_collision_check(self, walls):
         hit_wall_list = arcade.geometry.check_for_collision_with_list(self, walls)
@@ -519,7 +520,7 @@ class Game(arcade.Window):
                 player.center_y = int(player.center_y)
 
             for p in self.player_list:
-                p.killers_collision_check(self.killers)
+                p.killers_collision_check(self, self.killers)
                 p.wall_collision_check(self.walls)
             for p in self.player_list:
                 p.change_y -= 0.2  # gravity
@@ -557,10 +558,10 @@ class Game(arcade.Window):
                                 p2.change_x = -0.5
                                 p2.change_y = 0.0
                         elif p1.center_y > p2.center_y:
-                            p1.score += 1
+                            p1.score += CFG.Player.kill_score
                             self.do_die(p2)
                         elif p2.center_y > p1.center_y:
-                            p2.score += 1
+                            p2.score += CFG.Player.kill_score
                             self.do_die(p1)
 
     def do_die(self, p: Player) -> None:

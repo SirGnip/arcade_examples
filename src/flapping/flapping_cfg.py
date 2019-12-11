@@ -34,3 +34,5 @@ class Player:
     jump_speed = 3
     filename = 'flapping.last_players'
     respawn_delay = 1.0
+    kill_score = 2
+    death_score = -1
