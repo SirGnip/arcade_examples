@@ -1,3 +1,6 @@
+import arcade
+
+
 class Registration:
     names = {
         'Wayne': 'bat.png',
@@ -36,3 +39,8 @@ class Player:
     respawn_delay = 1.0
     kill_score = 2
     death_score = -1
+
+
+class UI:
+    HEADER_COLOR = arcade.color.PEACH_ORANGE
+    BODY_COLOR = arcade.color.WHITE

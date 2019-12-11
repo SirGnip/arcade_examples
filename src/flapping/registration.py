@@ -1,0 +1,198 @@
+import itertools
+import pickle
+import traceback
+
+import arcade
+import pyglet
+
+from flapping import event
+from flapping import scriptutl
+from flapping.player import Player
+from flapping import flapping_cfg as CFG
+
+
+class Registration:
+    """Hacky class to store state related to the Registration state. Prob should be a "state" class or something."""
+    def __init__(self, game, win_height):
+        self.msg = '...'
+        self.last_input = None
+        self.done = False
+        self.entries = []
+        self.win_height = win_height
+        self.game = game
+        self.script = self.registration_script()
+
+    @staticmethod
+    def _get_event_skip_escape_key(evt):
+        """Used by scriptutil.wait_until_non_none() to block until a non-ESC key has been pressed"""
+        if evt is not None:
+            if evt.get_id() == event.KeyPress(arcade.key.ESCAPE).get_id():
+                return None
+        return evt
+
+    def registration_script(self):
+        """Generator-script that creates players and registers their input"""
+        self.load_players()
+        player_num = len(self.entries)
+
+        while True:
+            player_num += 1
+            self.msg = 'Press your desired FLAP to register Player {}...\nESC to start game. F5 to clear player list.'.format(player_num)
+            evt = yield from scriptutl.wait_until_non_none(lambda: self.last_input)
+
+            # clear player list
+            if evt.get_id() == event.KeyPress(arcade.key.F5).get_id():
+                self.entries = []
+                self.last_input = None
+                player_num = 0
+                continue
+
+            # end registration
+            if evt.get_id() == event.KeyPress(arcade.key.ESCAPE).get_id():
+                self.last_input = None
+                if len(self.entries) > 0:
+                    break
+                else:
+                    print('WARNING: Game can not start with no players')
+                    continue
+
+            entry = _RegistrationEntry()
+            self.entries.append(entry)
+            entry.flap = evt
+            self.last_input = None
+            self.msg = 'Press LEFT for Player {}'.format(player_num)
+            evt = yield from scriptutl.wait_until_non_none(lambda: self._get_event_skip_escape_key(self.last_input))
+
+            if isinstance(evt, event.JoyHatMotion):
+                entry.left = evt
+                entry.right = evt
+                self.last_input = None
+                continue
+
+            entry.left = evt
+            self.last_input = None
+            self.msg = 'Press RIGHT for Player {}'.format(player_num)
+            evt = yield from scriptutl.wait_until_non_none(lambda: self._get_event_skip_escape_key(self.last_input))
+
+            entry.right = evt
+            self.last_input = None
+
+        self.finalize()
+        self.done = True
+
+    def on_draw(self):
+        arcade.draw_text('Player Registration', 25, self.win_height - 75, CFG.UI.HEADER_COLOR, 40)
+        arcade.draw_text(self.msg, 25, self.win_height - 175, CFG.UI.HEADER_COLOR, 30)
+        summary = self.get_summary()
+        arcade.draw_text(summary, 25, self.win_height - 200, CFG.UI.BODY_COLOR, 25, anchor_y='top')
+        arcade.draw_text('After registering, press FLAP to cycle through names.', 100, 40, CFG.UI.HEADER_COLOR, 20)
+
+    def on_event(self, evt):
+        matched = False
+        for entry in self.entries:
+            if entry.is_event_used(evt):
+                matched = True
+                if evt.get_id() == entry.flap.get_id():
+                    entry.make_name()
+        if not matched:
+            self.last_input = evt
+
+    def get_summary(self):
+        summaries = [e.get_summary() for e in self.entries]
+        if len(summaries) == 0:
+            return '<no players registered>'
+        return '\n'.join(summaries)
+
+    def finalize(self):
+        self.save_players()
+        for entry in self.entries:
+            entry.finalize(self.game)
+
+    def save_players(self):
+        def get_persistent_id(obj):
+            """Pickle pyglet's Joystick object by simply saving index into list"""
+            if isinstance(obj, pyglet.input.base.Joystick):
+                joy_idx = self.game.joysticks.index(obj)
+                print('  Pickling joystick idx #{} {}'.format(joy_idx, obj.device))
+                return joy_idx
+            return None
+
+        with open(CFG.Player.filename, 'wb') as out_file:
+            print('Saving player list to {}'.format(CFG.Player.filename))
+            pickler = pickle.Pickler(out_file)
+            pickler.persistent_id = get_persistent_id
+            pickler.dump(self.entries)
+
+    def load_players(self):
+        def load_from_persistent_id(persist_id):
+            """Unpickle pyglet's Joystick object by using index to lookup joystick in list"""
+            print('  Unpickling object using persistent_id:', persist_id)
+            joystick_idx = persist_id
+            joy = self.game.joysticks[joystick_idx]
+            print('  Unpickling joystick:', joy.device)
+            return joy
+
+        try:
+            print('Attempting to load last players from {}'.format(CFG.Player.filename))
+            with open(CFG.Player.filename, 'rb') as in_file:
+                unpickler = pickle.Unpickler(in_file)
+                unpickler.persistent_load = load_from_persistent_id
+                self.entries = unpickler.load()
+                print('Loaded {} players'.format(len(self.entries)))
+        except Exception as exc:
+            print('WARNING: Problem loading previous player list from file:"{}" so starting with an empty player list. Exception: {}'.format(CFG.Player.filename, type(exc)))
+            traceback.print_exc()
+
+
+class _RegistrationEntry:
+    """Represents a player during the registration phase"""
+    def __init__(self):
+        self.name = None
+        self.names = itertools.cycle(sorted(CFG.Registration.names.keys()))
+        self.make_name()
+        self.flap = None
+        self.left = None
+        self.right = None
+
+    def is_event_used(self, evt):
+        used_ids = (
+            self.flap.get_id() if self.flap else None,
+            self.left.get_id() if self.left else None,
+            self.right.get_id() if self.right else None,
+        )
+        return evt.get_id() in used_ids
+
+    def make_name(self):
+        self.name = next(self.names)
+
+    def get_summary(self):
+        """Return a string representing the player"""
+        summary = 'Player:{} FLAP:{} '.format(self.name, self.flap)
+        if self.left:
+            summary += 'LEFT:{} '.format(self.left)
+        if self.right:
+            summary += 'RIGHT:{}\n'.format(self.right)
+        return summary
+
+    def finalize(self, game):
+        """Create Player objects and input handling dict when registration is complete"""
+        img = 'img/' + CFG.Registration.names[self.name]
+        player = Player(img, self.name)
+        game.player_list.append(player)
+
+        # flap
+        game.gameplay_input[self.flap.get_id()] = player.on_up
+
+        if isinstance(self.left, event.JoyHatMotion):
+            # left & right with joyhat
+            game.gameplay_input[self.left.get_id()] = player.on_joyhat
+            game.gameplay_input[self.right.get_id()] = player.on_joyhat
+        else:
+            # left
+            game.gameplay_input[self.left.get_id()] = player.on_left
+            left_release_event_id = self.left.make_release().get_id()
+            game.gameplay_input[left_release_event_id] = player.on_left_release
+            # right
+            game.gameplay_input[self.right.get_id()] = player.on_right
+            right_release_event_id = self.right.make_release().get_id()
+            game.gameplay_input[right_release_event_id] = player.on_right_release
