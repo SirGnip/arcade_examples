@@ -33,3 +33,4 @@ class Player:
     max_vert_speed = 7.0
     jump_speed = 3
     filename = 'flapping.last_players'
+    respawn_delay = 1.0

@@ -11,6 +11,7 @@ from flapping import scriptutl
 from flapping import flapping_cfg as CFG
 from flapping import event
 from flapping import collision
+from common.timers import Timers
 
 HEADER_COLOR = arcade.color.PEACH_ORANGE
 BODY_COLOR = arcade.color.WHITE
@@ -34,6 +35,7 @@ class Player(arcade.Sprite):
         self.setup()
         self.score = 0
         self.name = name
+        self.is_alive = True
         right_texture = arcade.load_texture(img)
         left_texture = arcade.load_texture(img, mirrored=True)
         self.textures.append(right_texture)
@@ -96,6 +98,9 @@ class Player(arcade.Sprite):
 
     def update(self):
         super().update()
+        if not self.is_alive:
+            return
+
         if self.state == Player.LANDED:
             if self.dir == Player.LEFT:
                 self.change_x -= CFG.Player.movement_speed
@@ -139,7 +144,15 @@ class Player(arcade.Sprite):
         self.change_x = 0.0
         self.change_y = 0.0
 
+    def kill(self):
+        self.is_alive = False
+        self.setup()
+        # Move offscreen so Player isn't seen. Probably better to remove from SpriteList.
+        self.center_x = -100
+        self.center_y = -100
+
     def respawn(self):
+        self.is_alive = True
         self.setup()
         self.center_x = random.randint(200, 1000)
         self.center_y = 75
@@ -374,6 +387,7 @@ class Game(arcade.Window):
                 joy.on_joybutton_release = self.on_joybutton_release
                 joy.on_joyhat_motion = self.on_joyhat
 
+        self.timers: Timers = Timers()
         next(self.script)  # step gameplay script when everything is initialized
 
     def setup(self, map_name):
@@ -487,6 +501,7 @@ class Game(arcade.Window):
                 self.gameplay_input[evt.get_id()](hatx, haty)
 
     def update(self, delta_time):
+        self.timers.update(delta_time)
         if self.state == Game.WELCOME:
             pass
         elif self.state == Game.REGISTRATION:
@@ -518,33 +533,42 @@ class Game(arcade.Window):
         except StopIteration:
             self.close()
 
-    def check_player_collision(self):
+    def check_player_collision(self) -> None:
+        p1: Player
         for idx1, p1 in enumerate(self.player_list):
             for idx2 in range(idx1 + 1, len(self.player_list)):
-                p2 = self.player_list[idx2]
-                if arcade.check_for_collision(p1, p2):
-                    if int(p1.center_y) == int(p2.center_y):
-                        # equal collision
-                        if p1.center_x < p2.center_x:
-                            p1.center_x += -1
-                            p1.change_x = -0.5
-                            p1.change_y = 0.0
-                            p2.center_x += 1
-                            p2.change_x = 0.5
-                            p2.change_y = 0.0
-                        else:
-                            p1.center_x += 1
-                            p1.change_x = 0.5
-                            p1.change_y = 0.0
-                            p2.center_x += -1
-                            p2.change_x = -0.5
-                            p2.change_y = 0.0
-                    elif p1.center_y > p2.center_y:
-                        p1.score += 1
-                        p2.respawn()
-                    elif p2.center_y > p1.center_y:
-                        p2.score += 1
-                        p1.respawn()
+                p2: Player = self.player_list[idx2]
+                if p1.is_alive and p2.is_alive:
+                    if arcade.check_for_collision(p1, p2):
+                        if int(p1.center_y) == int(p2.center_y):
+                            # equal collision
+                            if p1.center_x < p2.center_x:
+                                p1.center_x += -1
+                                p1.change_x = -0.5
+                                p1.change_y = 0.0
+                                p2.center_x += 1
+                                p2.change_x = 0.5
+                                p2.change_y = 0.0
+                            else:
+                                p1.center_x += 1
+                                p1.change_x = 0.5
+                                p1.change_y = 0.0
+                                p2.center_x += -1
+                                p2.change_x = -0.5
+                                p2.change_y = 0.0
+                        elif p1.center_y > p2.center_y:
+                            p1.score += 1
+                            self.do_die(p2)
+                        elif p2.center_y > p1.center_y:
+                            p2.score += 1
+                            self.do_die(p1)
+
+    def do_die(self, p: Player) -> None:
+        p.kill()
+        self.timers.add(CFG.Player.respawn_delay, lambda: self.do_respawn(p))
+
+    def do_respawn(self, p: Player) -> None:
+        p.respawn()
 
     def print_scores(self):
         for p in self.player_list:
