@@ -1,6 +1,7 @@
 import itertools
 import pickle
 import traceback
+from typing import Any, Iterator, List, Optional, TYPE_CHECKING
 
 import arcade
 import pyglet
@@ -11,26 +12,30 @@ from flapping.player import Player
 from flapping import flapping_cfg as CFG
 
 
+if TYPE_CHECKING:  # prevent circular import reference caused by type hinting
+    from flapping.flap_app import Game
+
+
 class Registration:
     """Hacky class to store state related to the Registration state. Prob should be a "state" class or something."""
-    def __init__(self, game, win_height):
+    def __init__(self, game: "Game", win_height: int):
         self.msg = '...'
-        self.last_input = None
+        self.last_input: Optional[event.Event] = None
         self.done = False
-        self.entries = []
+        self.entries: List["_RegistrationEntry"] = []
         self.win_height = win_height
         self.game = game
         self.script = self.registration_script()
 
     @staticmethod
-    def _get_event_skip_escape_key(evt):
+    def _get_event_skip_escape_key(evt: Optional[event.Event]) -> Optional[event.Event]:
         """Used by scriptutil.wait_until_non_none() to block until a non-ESC key has been pressed"""
         if evt is not None:
             if evt.get_id() == event.KeyPress(arcade.key.ESCAPE).get_id():
                 return None
         return evt
 
-    def registration_script(self):
+    def registration_script(self) -> Iterator[None]:
         """Generator-script that creates players and registers their input"""
         self.load_players()
         player_num = len(self.entries)
@@ -80,14 +85,14 @@ class Registration:
         self.finalize()
         self.done = True
 
-    def on_draw(self):
+    def on_draw(self) -> None:
         arcade.draw_text('Player Registration', 25, self.win_height - 75, CFG.UI.HEADER_COLOR, 40)
         arcade.draw_text(self.msg, 25, self.win_height - 175, CFG.UI.HEADER_COLOR, 30)
         summary = self.get_summary()
         arcade.draw_text(summary, 25, self.win_height - 200, CFG.UI.BODY_COLOR, 25, anchor_y='top')
         arcade.draw_text('After registering, press FLAP to cycle through names.', 100, 40, CFG.UI.HEADER_COLOR, 20)
 
-    def on_event(self, evt):
+    def on_event(self, evt: event.Event) -> None:
         matched = False
         for entry in self.entries:
             if entry.is_event_used(evt):
@@ -97,19 +102,19 @@ class Registration:
         if not matched:
             self.last_input = evt
 
-    def get_summary(self):
+    def get_summary(self) -> str:
         summaries = [e.get_summary() for e in self.entries]
         if len(summaries) == 0:
             return '<no players registered>'
         return '\n'.join(summaries)
 
-    def finalize(self):
+    def finalize(self) -> None:
         self.save_players()
         for entry in self.entries:
             entry.finalize(self.game)
 
-    def save_players(self):
-        def get_persistent_id(obj):
+    def save_players(self) -> None:
+        def get_persistent_id(obj) -> Optional[int]:
             """Pickle pyglet's Joystick object by simply saving index into list"""
             if isinstance(obj, pyglet.input.base.Joystick):
                 joy_idx = self.game.joysticks.index(obj)
@@ -120,11 +125,11 @@ class Registration:
         with open(CFG.Player.filename, 'wb') as out_file:
             print('Saving player list to {}'.format(CFG.Player.filename))
             pickler = pickle.Pickler(out_file)
-            pickler.persistent_id = get_persistent_id
+            pickler.persistent_id = get_persistent_id  # type: ignore[assignment]
             pickler.dump(self.entries)
 
-    def load_players(self):
-        def load_from_persistent_id(persist_id):
+    def load_players(self) -> None:
+        def load_from_persistent_id(persist_id) -> pyglet.input.base.Joystick:
             """Unpickle pyglet's Joystick object by using index to lookup joystick in list"""
             print('  Unpickling object using persistent_id:', persist_id)
             joystick_idx = persist_id
@@ -136,7 +141,7 @@ class Registration:
             print('Attempting to load last players from {}'.format(CFG.Player.filename))
             with open(CFG.Player.filename, 'rb') as in_file:
                 unpickler = pickle.Unpickler(in_file)
-                unpickler.persistent_load = load_from_persistent_id
+                unpickler.persistent_load = load_from_persistent_id  # type: ignore[assignment]
                 self.entries = unpickler.load()
                 print('Loaded {} players'.format(len(self.entries)))
         except Exception as exc:
@@ -147,14 +152,14 @@ class Registration:
 class _RegistrationEntry:
     """Represents a player during the registration phase"""
     def __init__(self):
-        self.name = None
+        self.name: str
         self.names = itertools.cycle(sorted(CFG.Registration.names.keys()))
         self.make_name()
         self.flap = None
         self.left = None
         self.right = None
 
-    def is_event_used(self, evt):
+    def is_event_used(self, evt: event.Event):
         used_ids = (
             self.flap.get_id() if self.flap else None,
             self.left.get_id() if self.left else None,
@@ -162,10 +167,10 @@ class _RegistrationEntry:
         )
         return evt.get_id() in used_ids
 
-    def make_name(self):
+    def make_name(self) -> None:
         self.name = next(self.names)
 
-    def get_summary(self):
+    def get_summary(self) -> str:
         """Return a string representing the player"""
         summary = 'Player:{} FLAP:{} '.format(self.name, self.flap)
         if self.left:
@@ -174,7 +179,7 @@ class _RegistrationEntry:
             summary += 'RIGHT:{}\n'.format(self.right)
         return summary
 
-    def finalize(self, game):
+    def finalize(self, game: 'Game') -> None:
         """Create Player objects and input handling dict when registration is complete"""
         img = 'img/' + CFG.Registration.names[self.name]
         player = Player(img, self.name)

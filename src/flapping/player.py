@@ -18,6 +18,8 @@ class Player(arcade.Sprite):
 
     def __init__(self, img: str, name: str):
         super().__init__()
+        # self.change_x: float  # should be coming from arcade package
+        # self.change_y: float  # should be coming from arcade package
         self.btn_left = False
         self.btn_right = False
         self.state: int = Player.FLYING
@@ -32,7 +34,7 @@ class Player(arcade.Sprite):
         self.textures.append(left_texture)
         self.set_texture(Player.RIGHT)
 
-    def death_script(self) -> Iterator:
+    def death_script(self) -> Iterator[None]:
         """Generator "script" that runs to manage the timing of a player's death"""
         self.kill()
         yield from scriptutl.sleep(CFG.Player.respawn_delay)
@@ -74,7 +76,7 @@ class Player(arcade.Sprite):
         else:
             self.dir = Player.NO_DIRECTION
 
-    def on_joyhat(self, hatx, haty) -> None:
+    def on_joyhat(self, hatx: float, haty: float) -> None:
         if hatx < 0:
             self.dir = Player.LEFT
             self.set_texture(Player.LEFT)
@@ -88,11 +90,11 @@ class Player(arcade.Sprite):
         if self.state == Player.FLYING:
             self.state = Player.LANDED
 
-    def set_flying(self):
+    def set_flying(self) -> None:
         if self.state == Player.LANDED:
             self.state = Player.FLYING
 
-    def update(self):
+    def update(self) -> None:
         super().update()
         if not self.is_alive:
             return
@@ -107,7 +109,7 @@ class Player(arcade.Sprite):
         self.change_y = min(self.change_y, CFG.Player.max_vert_speed)
         self.change_y = max(self.change_y, -CFG.Player.max_vert_speed)
 
-    def setup(self):
+    def setup(self) -> None:
         self.btn_left = False
         self.btn_right = False
         self.state = Player.FLYING
@@ -115,14 +117,14 @@ class Player(arcade.Sprite):
         self.change_x = 0.0
         self.change_y = 0.0
 
-    def kill(self):
+    def kill(self) -> None:
         self.is_alive = False
         self.setup()
         # Move offscreen so Player isn't seen. Probably better to remove from SpriteList.
         self.center_x = -100
         self.center_y = -100
 
-    def respawn(self):
+    def respawn(self) -> None:
         self.is_alive = True
         self.setup()
         self.center_x = random.randint(200, 1000)
