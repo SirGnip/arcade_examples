@@ -52,6 +52,7 @@ class Game(arcade.Window):
                 joy.on_joyhat_motion = self.on_joyhat
 
         self.timers: Timers = Timers()
+        self.script_pool: scriptutl.Pool = scriptutl.Pool()
         next(self.script)  # step gameplay script when everything is initialized
 
     def setup(self, map_name):
@@ -166,6 +167,7 @@ class Game(arcade.Window):
 
     def update(self, delta_time):
         self.timers.update(delta_time)
+        self.script_pool.update()
         if self.state == Game.WELCOME:
             pass
         elif self.state == Game.REGISTRATION:
@@ -201,7 +203,7 @@ class Game(arcade.Window):
         hit_list = arcade.geometry.check_for_collision_with_list(player, killers)
         if len(hit_list) > 0:
             player.score += CFG.Player.death_score
-            self.do_die(player)
+            self.script_pool.add(player.death_script())
 
     def check_wall_tiles_collision(self, player: Player, walls):
         hit_wall_list = arcade.geometry.check_for_collision_with_list(player, walls)
@@ -248,17 +250,10 @@ class Game(arcade.Window):
                                 p2.change_y = 0.0
                         elif p1.center_y > p2.center_y:
                             p1.score += CFG.Player.kill_score
-                            self.do_die(p2)
+                            self.script_pool.add(p2.death_script())
                         elif p2.center_y > p1.center_y:
                             p2.score += CFG.Player.kill_score
-                            self.do_die(p1)
-
-    def do_die(self, p: Player) -> None:
-        p.kill()
-        self.timers.add(CFG.Player.respawn_delay, lambda: self.do_respawn(p))
-
-    def do_respawn(self, p: Player) -> None:
-        p.respawn()
+                            self.script_pool.add(p1.death_script())
 
     def print_scores(self):
         for p in self.player_list:

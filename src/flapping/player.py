@@ -1,7 +1,9 @@
 import random
+from typing import Iterator
 
 import arcade
 
+from flapping import scriptutl
 from flapping import flapping_cfg as CFG
 
 
@@ -29,6 +31,12 @@ class Player(arcade.Sprite):
         self.textures.append(right_texture)
         self.textures.append(left_texture)
         self.set_texture(Player.RIGHT)
+
+    def death_script(self) -> Iterator:
+        """Generator "script" that runs to manage the timing of a player's death"""
+        self.kill()
+        yield from scriptutl.sleep(CFG.Player.respawn_delay)
+        self.respawn()
 
     def on_up(self) -> None:
         if self.state == Player.LANDED:

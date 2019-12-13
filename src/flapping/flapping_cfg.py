@@ -24,7 +24,7 @@ class Window:
 
 class Game:
     debug = False
-    goal_score = 3
+    goal_score = 5
     rounds = 8
     maps = ('map1.tmx', 'map2.tmx', 'map3.tmx', 'map4.tmx', 'map5.tmx')
 
