@@ -3,8 +3,10 @@ Utilities to help support the generator-based game script
 """
 import time
 
-from typing import Any, Callable, Iterator, List
-Script = Iterator[None]  # This is meant to be a generator function used for async "scripting". Making more self-documenting.
+from typing import Callable, Generator, List, Optional, TypeVar
+
+from flapping.app_types import Script
+
 
 class Pool:
     """A pool that manages generators and updataes them once a frame"""
@@ -32,17 +34,22 @@ class Pool:
             self._pool.remove(g)
 
 
-def wait_until(predicate: Callable[[], bool]) -> Iterator[None]:
+def wait_until(predicate: Callable[[], bool]) -> Generator[None, None, None]:
     """Utility generator that blocks until given predicate evaluates to true"""
     while True:
         if predicate():
             break
         yield
 
-# need to do a generic so that the return type of "func()" is the Iterator[Optional[FUNC_TYPE]]
-def wait_until_non_none(func: Callable[[], Any]) -> Iterator[None]:
+
+T = TypeVar("T")
+
+
+def wait_until_non_none(func: Callable[[], Optional[T]]) -> Generator[None, None, T]:
     """Utility generator that blocks until given function returns a non-None, then returns that value."""
-    # Edge case: if "None" is a value you want to return, this will fail
+    # Note that the callable "func" is expected to return None ("Optional[T]"). But, wait_until_non_none guarantees the
+    # return value is non-none ("T").
+    # Edge case: if "None" is a value you want to return, this function won't be useful.
     while True:
         val = func()
         if val is None:
@@ -51,7 +58,7 @@ def wait_until_non_none(func: Callable[[], Any]) -> Iterator[None]:
             return val
 
 
-def sleep(delay: float) -> Iterator[None]:
+def sleep(delay: float) -> Generator[None, None, None]:
     """Utility generator that blocks for the given amount of time"""
     start = time.time()
     end = start + delay

@@ -1,7 +1,7 @@
 import itertools
 import pickle
 import traceback
-from typing import Any, Iterator, List, Optional, TYPE_CHECKING
+from typing import Iterator, List, Optional, TYPE_CHECKING
 
 import arcade
 import pyglet
