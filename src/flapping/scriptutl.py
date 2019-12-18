@@ -8,8 +8,8 @@ from typing import Callable, Generator, List, Optional, TypeVar
 from flapping.app_types import Script
 
 
-class Pool:
-    """A pool that manages generators and updataes them once a frame"""
+class Scheduler:
+    """A Scheduler that manages a pool of generators and updataes them once a frame"""
     def __init__(self) -> None:
         self._pool: List[Script] = []
 
@@ -23,7 +23,7 @@ class Pool:
             pass
 
     def update(self) -> None:
-        """Update all generators in the Pool, removing any that are complete"""
+        """Update all generators, removing any that are complete"""
         to_del: List[Script] = []
         for gen in self._pool:
             try:
