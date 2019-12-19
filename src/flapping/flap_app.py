@@ -3,12 +3,16 @@ import os
 import arcade
 
 from common.timers import Timers
+from common.actor import Actor, ActorList
 from flapping import scriptutl
 from flapping import flapping_cfg as CFG
 from flapping import event
 from flapping import collision
 from flapping.player import Player
 from flapping.registration import Registration
+
+
+CIRCLE_TEXTURE = arcade.make_soft_circle_texture(diameter=20, color=arcade.color.WHITE)
 
 
 class Game(arcade.Window):
@@ -40,6 +44,8 @@ class Game(arcade.Window):
         self.gameplay_input = {
             event.KeyPress(arcade.key.ESCAPE).get_id(): self.close,
         }
+
+        self.actors = ActorList()
 
         # gamepad setup
         self.joysticks = arcade.joysticks.get_game_controllers()
@@ -120,6 +126,7 @@ class Game(arcade.Window):
             arcade.draw_text('\n'.join(lines), 100, 200, CFG.UI.BODY_COLOR, 38)
             if self.scoreboard_sub_state == 'ready':
                 arcade.draw_text('Press any input to continue...', 100, 50, CFG.UI.HEADER_COLOR, 24)
+        self.actors.draw()
 
     def on_key_press(self, key, modifiers):
         evt = event.KeyPress(key, modifiers)
@@ -168,6 +175,7 @@ class Game(arcade.Window):
     def update(self, delta_time):
         self.timers.update(delta_time)
         self.script_sched.update()
+        self.actors.update()
         if self.state == Game.WELCOME:
             pass
         elif self.state == Game.REGISTRATION:
@@ -179,7 +187,7 @@ class Game(arcade.Window):
             self.player_list.update()
 
             # Prevent partial-pixel positioning, which can cause edge artifacts on player sprites.
-            # This also makes it a bit easier to "stop" a player.
+            # This also makes it a bit easier for a player to completely stop the motion of their Player.
             for player in self.player_list:
                 player.center_x = int(player.center_x)
                 player.center_y = int(player.center_y)
@@ -199,10 +207,22 @@ class Game(arcade.Window):
         except StopIteration:
             self.close()
 
+    def make_player_death_emitter(self, player):
+        return arcade.make_burst_emitter(
+            (player.center_x, player.center_y),
+            [CIRCLE_TEXTURE],
+            particle_count=15,
+            particle_speed=5.0,
+            particle_lifetime_min=0.1,
+            particle_lifetime_max=0.2,
+            fade_particles=True
+        )
+
     def check_killer_tiles_collision(self, player: Player, killers):
         hit_list = arcade.geometry.check_for_collision_with_list(player, killers)
         if len(hit_list) > 0:
             player.score += CFG.Player.death_score
+            self.actors.append(self.make_player_death_emitter(player))
             self.script_sched.add(player.death_script())
 
     def check_wall_tiles_collision(self, player: Player, walls):
@@ -250,9 +270,11 @@ class Game(arcade.Window):
                                 p2.change_y = 0.0
                         elif p1.center_y > p2.center_y:
                             p1.score += CFG.Player.kill_score
+                            self.actors.append(self.make_player_death_emitter(p2))
                             self.script_sched.add(p2.death_script())
                         elif p2.center_y > p1.center_y:
                             p2.score += CFG.Player.kill_score
+                            self.actors.append(self.make_player_death_emitter(p1))
                             self.script_sched.add(p1.death_script())
 
     def print_scores(self):
