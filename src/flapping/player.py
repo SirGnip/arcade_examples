@@ -1,10 +1,41 @@
 import random
+from typing import TYPE_CHECKING
 
 import arcade
 
 from flapping.app_types import Script
 from flapping import scriptutl
 from flapping import flapping_cfg as CFG
+if TYPE_CHECKING:
+    from flapping.flap_app import Game
+
+
+DUST_TEXTURE = arcade.make_soft_circle_texture(diameter=20, color=arcade.color.GRAY)
+
+
+class ControllableEmitInterval(arcade.EmitController):
+    """Emit particles on an interval and can manually stop emitting"""
+    def __init__(self, emit_interval: float):
+        self._emit_interval = emit_interval
+        self._carryover_time = 0.0
+        self.active = True
+
+    def how_many(self, delta_time: float, current_particle_count: int) -> int:
+        if not self.active:
+            return 0
+        self._carryover_time += delta_time
+        emit_count = 0
+        while self._carryover_time >= self._emit_interval:
+            self._carryover_time -= self._emit_interval
+            emit_count += 1
+        return emit_count
+
+    def stop(self) -> None:
+        self.active = False
+
+    def is_complete(self) -> bool:
+        return not self.active
+
 
 
 class Player(arcade.Sprite):
@@ -16,8 +47,9 @@ class Player(arcade.Sprite):
     LEFT = 1
     NO_DIRECTION = 2
 
-    def __init__(self, img: str, name: str):
+    def __init__(self, img: str, name: str, game: "Game"):
         super().__init__()
+        self.game = game
         # self.change_x: float  # should be coming from arcade package
         # self.change_y: float  # should be coming from arcade package
         self.btn_left = False
@@ -33,6 +65,7 @@ class Player(arcade.Sprite):
         self.textures.append(right_texture)
         self.textures.append(left_texture)
         self.set_texture(Player.RIGHT)
+        self.skid_fx = None
 
     def death_script(self) -> Script:
         """Generator "script" that runs to manage the timing of a player's death"""
@@ -86,18 +119,38 @@ class Player(arcade.Sprite):
         else:
             self.dir = Player.NO_DIRECTION
 
+    def make_dust_emitter(self):
+        particle_factory = arcade.FadeParticle
+        return arcade.Emitter(
+            center_xy=(self.center_x, self.center_y),
+            emit_controller=ControllableEmitInterval(0.07),
+            particle_factory=lambda emitter: particle_factory(
+                filename_or_texture=random.choice([DUST_TEXTURE]),
+                change_xy=arcade.rand_vec_spread_deg(90, 20, 0.3),
+                lifetime=random.uniform(0.5, 0.7),
+            )
+        )
+
     def set_landed(self) -> None:
         if self.state == Player.FLYING:
             self.state = Player.LANDED
+            self.skid_fx = self.make_dust_emitter()
+            self.game.actors.append(self.skid_fx)
 
     def set_flying(self) -> None:
         if self.state == Player.LANDED:
             self.state = Player.FLYING
+            self.skid_fx.rate_factory.stop()
+            self.skid_fx = None
 
     def update(self) -> None:
         super().update()
         if not self.is_alive:
             return
+
+        if self.skid_fx:
+            self.skid_fx.center_x = self.center_x
+            self.skid_fx.center_y = self.bottom
 
         if self.state == Player.LANDED:
             if self.dir == Player.LEFT:

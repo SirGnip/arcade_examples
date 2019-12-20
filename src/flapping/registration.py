@@ -182,7 +182,7 @@ class _RegistrationEntry:
     def finalize(self, game: 'Game') -> None:
         """Create Player objects and input handling dict when registration is complete"""
         img = 'img/' + CFG.Registration.names[self.name]
-        player = Player(img, self.name)
+        player = Player(img, self.name, game)
         game.player_list.append(player)
 
         # flap

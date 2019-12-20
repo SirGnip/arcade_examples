@@ -97,6 +97,8 @@ class Game(arcade.Window):
             self.setup(CFG.Game.maps[i % len(CFG.Game.maps)])
             self.state = Game.PLAY
             yield from scriptutl.wait_until(self.is_game_over)
+            yield from scriptutl.sleep(1.0)  # give player a chance to see the effects of their action (and let FX play)
+            self.actors.clear()
 
             self.state = Game.SCOREBOARD
             # blackout input briefly so thtat any final, furious button mashing doesn't unintentionally skip the scoreboard
