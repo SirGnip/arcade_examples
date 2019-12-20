@@ -45,7 +45,7 @@ class Game(arcade.Window):
             event.KeyPress(arcade.key.ESCAPE).get_id(): self.close,
         }
 
-        self.actors = ActorList()
+        self.fx_actors = ActorList()
 
         # gamepad setup
         self.joysticks = arcade.joysticks.get_game_controllers()
@@ -98,7 +98,7 @@ class Game(arcade.Window):
             self.state = Game.PLAY
             yield from scriptutl.wait_until(self.is_game_over)
             yield from scriptutl.sleep(1.0)  # give player a chance to see the effects of their action (and let FX play)
-            self.actors.clear()
+            self.fx_actors.clear()
 
             self.state = Game.SCOREBOARD
             # blackout input briefly so thtat any final, furious button mashing doesn't unintentionally skip the scoreboard
@@ -128,7 +128,7 @@ class Game(arcade.Window):
             arcade.draw_text('\n'.join(lines), 100, 200, CFG.UI.BODY_COLOR, 38)
             if self.scoreboard_sub_state == 'ready':
                 arcade.draw_text('Press any input to continue...', 100, 50, CFG.UI.HEADER_COLOR, 24)
-        self.actors.draw()
+        self.fx_actors.draw()
 
     def on_key_press(self, key, modifiers):
         evt = event.KeyPress(key, modifiers)
@@ -177,7 +177,7 @@ class Game(arcade.Window):
     def update(self, delta_time):
         self.timers.update(delta_time)
         self.script_sched.update()
-        self.actors.update()
+        self.fx_actors.update()
         if self.state == Game.WELCOME:
             pass
         elif self.state == Game.REGISTRATION:
@@ -224,7 +224,7 @@ class Game(arcade.Window):
         hit_list = arcade.geometry.check_for_collision_with_list(player, killers)
         if len(hit_list) > 0:
             player.score += CFG.Player.death_score
-            self.actors.append(self.make_player_death_emitter(player))
+            self.fx_actors.append(self.make_player_death_emitter(player))
             self.script_sched.add(player.death_script())
 
     def check_wall_tiles_collision(self, player: Player, walls):
@@ -272,11 +272,11 @@ class Game(arcade.Window):
                                 p2.change_y = 0.0
                         elif p1.center_y > p2.center_y:
                             p1.score += CFG.Player.kill_score
-                            self.actors.append(self.make_player_death_emitter(p2))
+                            self.fx_actors.append(self.make_player_death_emitter(p2))
                             self.script_sched.add(p2.death_script())
                         elif p2.center_y > p1.center_y:
                             p2.score += CFG.Player.kill_score
-                            self.actors.append(self.make_player_death_emitter(p1))
+                            self.fx_actors.append(self.make_player_death_emitter(p1))
                             self.script_sched.add(p1.death_script())
 
     def print_scores(self):

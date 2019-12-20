@@ -135,7 +135,7 @@ class Player(arcade.Sprite):
         if self.state == Player.FLYING:
             self.state = Player.LANDED
             self.skid_fx = self.make_dust_emitter()
-            self.game.actors.append(self.skid_fx)
+            self.game.fx_actors.append(self.skid_fx)
 
     def set_flying(self) -> None:
         if self.state == Player.LANDED:
