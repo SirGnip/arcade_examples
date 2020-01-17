@@ -221,14 +221,14 @@ class Game(arcade.Window):
         )
 
     def check_killer_tiles_collision(self, player: Player, killers):
-        hit_list = arcade.geometry.check_for_collision_with_list(player, killers)
+        hit_list = arcade.check_for_collision_with_list(player, killers)
         if len(hit_list) > 0:
             player.score += CFG.Player.death_score
             self.fx_actors.append(self.make_player_death_emitter(player))
             self.script_sched.add(player.death_script())
 
     def check_wall_tiles_collision(self, player: Player, walls):
-        hit_wall_list = arcade.geometry.check_for_collision_with_list(player, walls)
+        hit_wall_list = arcade.check_for_collision_with_list(player, walls)
         if len(hit_wall_list) > 0:
             for wall in hit_wall_list:
                 hit = collision.intersect_AABB(player, wall)

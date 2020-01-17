@@ -25,7 +25,7 @@ setuptools.setup(
     python_requires='>=3.7',
     install_requires=[
         # 3rd party dependencies
-        'arcade==2.1.2',
+        'arcade==2.2.2',
         # tools
         'pytest==5.3.1',
         'pytest-cov==2.8.1',
