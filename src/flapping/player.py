@@ -69,6 +69,16 @@ class Player(arcade.Sprite):
         self.textures.append(left_texture)
         self.set_texture(Player.RIGHT)
 
+    def setup(self) -> None:
+        self.btn_left = False
+        self.btn_right = False
+        self.state = Player.FLYING
+        self.dir = Player.NO_DIRECTION
+        self.change_x = 0.0
+        self.change_y = 0.0
+        self.skid_fx = self.make_dust_emitter()
+        self.game.fx_actors.append(self.skid_fx)
+
     def death_script(self) -> Script:
         """Generator "script" that runs to manage the timing of a player's death"""
         self.kill()
@@ -161,16 +171,6 @@ class Player(arcade.Sprite):
         self.change_x = max(self.change_x, -CFG.Player.max_horiz_speed)
         self.change_y = min(self.change_y, CFG.Player.max_vert_speed)
         self.change_y = max(self.change_y, -CFG.Player.max_vert_speed)
-
-    def setup(self) -> None:
-        self.btn_left = False
-        self.btn_right = False
-        self.state = Player.FLYING
-        self.dir = Player.NO_DIRECTION
-        self.change_x = 0.0
-        self.change_y = 0.0
-        self.skid_fx = self.make_dust_emitter()
-        self.game.fx_actors.append(self.skid_fx)
 
     def kill(self) -> None:
         self.is_alive = False
