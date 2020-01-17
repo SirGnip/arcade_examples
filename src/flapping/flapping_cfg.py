@@ -3,6 +3,11 @@ import arcade
 
 class Registration:
     names = {
+        'Greedo': 'greedo.png',
+        'Azul': 'azul.png',
+        'Sunny': 'sunny.png',
+        'Ruby': 'ruby.png',
+        'Pepto': 'pepto.png',
         'Wayne': 'bat.png',
         'Quad':  'box.png',
         'Quackers': 'duck.png',
@@ -42,5 +47,5 @@ class Player:
 
 
 class UI:
-    HEADER_COLOR = arcade.color.PEACH_ORANGE
-    BODY_COLOR = arcade.color.WHITE
+    HEADER_COLOR = arcade.color.FOREST_GREEN
+    BODY_COLOR = arcade.color.DARK_BROWN

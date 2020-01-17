@@ -38,7 +38,7 @@ class Game(arcade.Window):
 
         self.window_width = width
         self.window_height = height
-        arcade.set_background_color(arcade.csscolor.CORNFLOWER_BLUE)
+        arcade.set_background_color((178, 198, 232))
 
         self.player_list = arcade.SpriteList()
         self.gameplay_input = {
