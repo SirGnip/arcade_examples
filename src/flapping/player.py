@@ -18,7 +18,7 @@ class ControllableEmitInterval(arcade.EmitController):
     def __init__(self, emit_interval: float):
         self._emit_interval = emit_interval
         self._carryover_time = 0.0
-        self.active = True
+        self.active = False
 
     def how_many(self, delta_time: float, current_particle_count: int) -> int:
         if not self.active:
@@ -30,12 +30,14 @@ class ControllableEmitInterval(arcade.EmitController):
             emit_count += 1
         return emit_count
 
+    def start(self) -> None:
+        self.active = True
+
     def stop(self) -> None:
         self.active = False
 
     def is_complete(self) -> bool:
-        return not self.active
-
+        return False
 
 
 class Player(arcade.Sprite):
@@ -56,6 +58,7 @@ class Player(arcade.Sprite):
         self.btn_right = False
         self.state: int = Player.FLYING
         self.dir: int = Player.NO_DIRECTION
+        self.skid_fx = None  # initialized in .setup()
         self.setup()
         self.score = 0
         self.name = name
@@ -65,7 +68,6 @@ class Player(arcade.Sprite):
         self.textures.append(right_texture)
         self.textures.append(left_texture)
         self.set_texture(Player.RIGHT)
-        self.skid_fx = None
 
     def death_script(self) -> Script:
         """Generator "script" that runs to manage the timing of a player's death"""
@@ -134,14 +136,12 @@ class Player(arcade.Sprite):
     def set_landed(self) -> None:
         if self.state == Player.FLYING:
             self.state = Player.LANDED
-            self.skid_fx = self.make_dust_emitter()
-            self.game.fx_actors.append(self.skid_fx)
+            self.skid_fx.rate_factory.start()
 
     def set_flying(self) -> None:
         if self.state == Player.LANDED:
             self.state = Player.FLYING
             self.skid_fx.rate_factory.stop()
-            self.skid_fx = None
 
     def update(self) -> None:
         super().update()
@@ -169,10 +169,11 @@ class Player(arcade.Sprite):
         self.dir = Player.NO_DIRECTION
         self.change_x = 0.0
         self.change_y = 0.0
+        self.skid_fx = self.make_dust_emitter()
+        self.game.fx_actors.append(self.skid_fx)
 
     def kill(self) -> None:
         self.is_alive = False
-        self.setup()
         # Move offscreen so Player isn't seen. Probably better to remove from SpriteList.
         self.center_x = -100
         self.center_y = -100
