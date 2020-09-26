@@ -26,12 +26,5 @@ setuptools.setup(
     install_requires=[
         # 3rd party dependencies
         'arcade==2.2.2',
-        # tools
-        'pytest==5.3.1',
-        'pytest-cov==2.8.1',
-        'pylint==2.4.4',
-        'mypy==0.750',
-        # personal dependencies
-        #'mylib @ http://github.com/SirGnip/mylib/tarball/0.0.1',
     ],
 )
