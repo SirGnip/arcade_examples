@@ -146,7 +146,6 @@ class Player(arcade.Sprite):
     def set_landed(self) -> None:
         if self.state == Player.FLYING:
             self.state = Player.LANDED
-            self.skid_fx.rate_factory.start()
 
     def set_flying(self) -> None:
         if self.state == Player.LANDED:
@@ -163,6 +162,11 @@ class Player(arcade.Sprite):
             self.skid_fx.center_y = self.bottom
 
         if self.state == Player.LANDED:
+            movement_pressed = self.btn_right or self.btn_left
+            if movement_pressed or abs(self.change_x) > 2.5:
+                self.skid_fx.rate_factory.start()
+            else:
+                self.skid_fx.rate_factory.stop()
             if self.dir == Player.LEFT:
                 self.change_x -= CFG.Player.movement_speed
             elif self.dir == Player.RIGHT:
