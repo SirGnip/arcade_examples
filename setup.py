@@ -25,6 +25,6 @@ setuptools.setup(
     python_requires='>=3.7',
     install_requires=[
         # 3rd party dependencies
-        'arcade==2.2.2',
+        'arcade==2.4.2',
     ],
 )
