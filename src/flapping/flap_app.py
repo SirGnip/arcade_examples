@@ -177,7 +177,7 @@ class Game(arcade.Window):
     def update(self, delta_time):
         self.timers.update(delta_time)
         self.script_sched.update()
-        self.fx_actors.update()
+        self.fx_actors.update(delta_time)
         if self.state == Game.WELCOME:
             pass
         elif self.state == Game.REGISTRATION:

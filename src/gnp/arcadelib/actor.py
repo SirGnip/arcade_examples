@@ -6,7 +6,7 @@ import arcade
 
 class Actor:
     """Actor is an "interface" that allows the app to manage drawing, updating, and lifetime of dynamic objects"""
-    def update(self):
+    def update(self, delta_time: float):
         raise NotImplemented("Must implement")
 
     def draw(self):
@@ -28,6 +28,9 @@ class Actor:
 # monkey patch existing arcade classes to make them Actor-like
 arcade.Sprite.can_reap = lambda other_self: None
 arcade.SpriteList.can_reap = lambda other_self: None
+# monkey patch Emitter to handle Actor passing "delta_time" to update() method
+arcade.Emitter._original_update = arcade.Emitter.update
+arcade.Emitter.update = lambda other_self, delta_time: other_self._original_update()
 
 
 class ActorList(list, Actor):
@@ -36,10 +39,10 @@ class ActorList(list, Actor):
         for actor in self:
             actor.draw()
 
-    def update(self):
+    def update(self, delta_time: float):
         actors_to_delete = []
         for actor in self:
-            actor.update()
+            actor.update(delta_time)
             if actor.can_reap():
                 actors_to_delete.append(actor)
         for actor_to_del in actors_to_delete:
