@@ -2,8 +2,8 @@ import os
 
 import arcade
 
-from common.timers import Timers
-from common.actor import Actor, ActorList
+from gnp.arcadelib.timers import Timers
+from gnp.arcadelib.actor import ActorList
 from flapping import scriptutl
 from flapping import flapping_cfg as CFG
 from flapping import event
