@@ -4,7 +4,7 @@ import arcade
 
 from gnp.arcadelib.timers import Timers
 from gnp.arcadelib.actor import ActorList
-from flapping import scriptutl
+from gnp.arcadelib import scriptutl
 from flapping import flapping_cfg as CFG
 from flapping import event
 from flapping import collision

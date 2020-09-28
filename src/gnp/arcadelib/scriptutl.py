@@ -3,17 +3,18 @@ Utilities to help support the generator-based game script
 """
 import time
 
-from typing import Callable, Generator, List, Optional, TypeVar
+from typing import Callable, List, Optional, TypeVar, Generator
 
-from flapping.app_types import Script
+# A generator function used for async "scripting" of game events. A "Generator Script".
+GenScript = Generator[None, None, None]
 
 
 class Scheduler:
     """A Scheduler that manages a pool of generators and updataes them once a frame"""
     def __init__(self) -> None:
-        self._pool: List[Script] = []
+        self._pool: List[GenScript] = []
 
-    def add(self, gen: Script) -> None:
+    def add(self, gen: GenScript) -> None:
         """Add generator to pool"""
         try:
             # update generator before adding it to Pool to run code that exists before the first "yield".
@@ -24,7 +25,7 @@ class Scheduler:
 
     def update(self) -> None:
         """Update all generators, removing any that are complete"""
-        to_del: List[Script] = []
+        to_del: List[GenScript] = []
         for gen in self._pool:
             try:
                 next(gen)
@@ -34,7 +35,7 @@ class Scheduler:
             self._pool.remove(g)
 
 
-def wait_until(predicate: Callable[[], bool]) -> Generator[None, None, None]:
+def wait_until(predicate: Callable[[], bool]) -> GenScript:
     """Utility generator that blocks until given predicate evaluates to true"""
     while True:
         if predicate():
@@ -58,7 +59,7 @@ def wait_until_non_none(func: Callable[[], Optional[T]]) -> Generator[None, None
             return val
 
 
-def sleep(delay: float) -> Generator[None, None, None]:
+def sleep(delay: float) -> GenScript:
     """Utility generator that blocks for the given amount of time"""
     start = time.time()
     end = start + delay

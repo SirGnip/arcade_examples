@@ -3,8 +3,7 @@ from typing import TYPE_CHECKING
 
 import arcade
 
-from flapping.app_types import Script
-from flapping import scriptutl
+from gnp.arcadelib import scriptutl
 from flapping import flapping_cfg as CFG
 if TYPE_CHECKING:
     from flapping.flap_app import Game
@@ -79,7 +78,7 @@ class Player(arcade.Sprite):
         self.skid_fx = self.make_dust_emitter()
         self.game.fx_actors.append(self.skid_fx)
 
-    def death_script(self) -> Script:
+    def death_script(self) -> scriptutl.GenScript:
         """Generator "script" that runs to manage the timing of a player's death"""
         self.kill()
         yield from scriptutl.sleep(CFG.Player.respawn_delay)

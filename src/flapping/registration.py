@@ -7,7 +7,7 @@ import arcade
 import pyglet
 
 from flapping import event
-from flapping import scriptutl
+from gnp.arcadelib import scriptutl
 from flapping.player import Player
 from flapping import flapping_cfg as CFG
 
