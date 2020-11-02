@@ -1,4 +1,5 @@
 import itertools
+import inspect
 import pickle
 import traceback
 from typing import Iterator, List, Optional, TYPE_CHECKING
@@ -173,11 +174,36 @@ class _RegistrationEntry:
 
     def get_summary(self) -> str:
         """Return a string representing the player"""
-        summary = 'Player:{} FLAP:{} '.format(self.name, self.flap)
-        if self.left:
-            summary += 'LEFT:{} '.format(self.left)
-        if self.right:
-            summary += 'RIGHT:{}\n'.format(self.right)
+        key_constants = [(name, value) for name, value in inspect.getmembers(arcade.key) if not name.startswith('__') and not name.startswith("MOTION")]
+        key_name_lookup = {}
+        for key_name, key_id in key_constants:
+            key_name_lookup[key_id] = key_name
+
+        if self.flap is None:
+            flap = ""
+        else:
+            if not str(self.flap).isascii():
+                flap = key_name_lookup[self.flap.key]
+            else:
+                flap = str(self.flap)
+
+        if self.left is None:
+            left = ""
+        else:
+            if not str(self.left).isascii():
+                left = key_name_lookup[self.left.key]
+            else:
+                left = str(self.left)
+
+        if self.right is None:
+            right = ""
+        else:
+            if not str(self.right).isascii():
+                right = key_name_lookup[self.right.key]
+            else:
+                right = str(self.right)
+
+        summary = f'Player:{self.name} {flap} / {left} / {right}\n'
         return summary
 
     def finalize(self, game: 'Game') -> None:
