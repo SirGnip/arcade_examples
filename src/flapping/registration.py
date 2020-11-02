@@ -42,15 +42,16 @@ class Registration:
 
         while True:
             player_num += 1
-            self.msg = 'Press your desired FLAP to register Player {}...\nESC to start game. F5 to clear player list.'.format(player_num)
+            self.msg = 'Press your desired FLAP to register Player {}...\nESC to start game. F5 to clear bottom player.'.format(player_num)
             evt = yield from scriptutl.wait_until_non_none(lambda: self.last_input)
 
             # clear player list
             if evt.get_id() == event.KeyPress(arcade.key.F5).get_id():
-                self.entries = []
-                self.last_input = None
-                player_num = 0
-                continue
+                if len(self.entries) > 0:
+                    self.entries.pop()
+                    self.last_input = None
+                    player_num -= 1
+                    continue
 
             # end registration
             if evt.get_id() == event.KeyPress(arcade.key.ESCAPE).get_id():
