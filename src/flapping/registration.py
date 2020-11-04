@@ -31,8 +31,11 @@ class Registration:
     @staticmethod
     def _get_device_locked_event(evt: Optional[event.Event], cur_joy) -> Optional[event.Event]:
         """Used by scriptutil.wait_until_non_none() to block until a key locked to current input device has been pressed"""
+        escape_id = event.KeyPress(arcade.key.ESCAPE).get_id()
+        f5_id = event.KeyPress(arcade.key.F5).get_id()
+
         if evt is not None:
-            if evt.get_id() == event.KeyPress(arcade.key.ESCAPE).get_id():
+            if evt.get_id() in (escape_id, f5_id):
                 return None
 
             if cur_joy is None:
@@ -54,20 +57,16 @@ class Registration:
     def registration_script(self) -> Iterator[None]:
         """Generator-script that creates players and registers their input"""
         self.load_players()
-        player_num = len(self.entries)
 
         while True:
-            player_num += 1
-            self.msg = 'Press your desired FLAP to register Player {}...\nESC to start game. F5 to clear bottom player.'.format(player_num)
+            self.msg = f'Press your desired FLAP to register Player {len(self.entries)+1}...\nESC to start game. F5 to clear bottom player.'
             evt = yield from scriptutl.wait_until_non_none(lambda: self.last_input if not isinstance(self.last_input, event.JoyHatMotion) else None)
 
-            # clear player list
             if evt.get_id() == event.KeyPress(arcade.key.F5).get_id():
+                self.last_input = None
                 if len(self.entries) > 0:
                     self.entries.pop()
-                    self.last_input = None
-                    player_num -= 1
-                    continue
+                continue
 
             # end registration
             if evt.get_id() == event.KeyPress(arcade.key.ESCAPE).get_id():
@@ -85,7 +84,7 @@ class Registration:
             if isinstance(evt, event.JoyButtonPress):
                 flap_joy = evt.joy
             self.last_input = None
-            self.msg = 'Press LEFT for Player {}'.format(player_num)
+            self.msg = f'Press LEFT for Player {len(self.entries)}'
             evt = yield from scriptutl.wait_until_non_none(lambda: self._get_device_locked_event(self.last_input, flap_joy))
 
             if isinstance(evt, event.JoyHatMotion):
@@ -96,7 +95,7 @@ class Registration:
 
             entry.left = evt
             self.last_input = None
-            self.msg = 'Press RIGHT for Player {}'.format(player_num)
+            self.msg = f'Press RIGHT for Player {len(self.entries)}'
             evt = yield from scriptutl.wait_until_non_none(lambda: self._get_device_locked_event(self.last_input, flap_joy))
 
             entry.right = evt
