@@ -210,18 +210,28 @@ class _RegistrationEntry:
         for key_name, key_id in key_constants:
             key_name_lookup[key_id] = key_name
 
+        device = ''
         if self.flap is None:
             flap = ""
         else:
-            if not str(self.flap).isascii():
+            if isinstance(self.flap, event.JoyButtonPress):
+                flap = f'#{self.flap.button}'
+            elif not str(self.flap).isascii():
                 flap = key_name_lookup[self.flap.key]
             else:
                 flap = str(self.flap)
 
+            if isinstance(self.flap, event.JoyButtonPress):
+                device = self.flap.joy.device.name.strip()
+            elif isinstance(self.flap, event.KeyPress):
+                device = 'keyboard'
+
         if self.left is None:
             left = ""
         else:
-            if not str(self.left).isascii():
+            if isinstance(self.left, event.JoyButtonPress):
+                left = f'#{self.left.button}'
+            elif not str(self.left).isascii():
                 left = key_name_lookup[self.left.key]
             else:
                 left = str(self.left)
@@ -229,12 +239,14 @@ class _RegistrationEntry:
         if self.right is None:
             right = ""
         else:
-            if not str(self.right).isascii():
+            if isinstance(self.right, event.JoyButtonPress):
+                right = f'#{self.right.button}'
+            elif not str(self.right).isascii():
                 right = key_name_lookup[self.right.key]
             else:
                 right = str(self.right)
 
-        summary = f'Player:{self.name} {flap} / {left} / {right}\n'
+        summary = f'{self.name} {flap} / {left} / {right} ({device})\n'
         return summary
 
     def finalize(self, game: 'Game') -> None:
