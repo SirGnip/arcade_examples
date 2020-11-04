@@ -29,6 +29,20 @@ class Registration:
         self.script = self.registration_script()
 
     @staticmethod
+    def _get_flap_event(evt: Optional[event.Event], player_entries):
+        # don't allow a joystick to be used twice
+        if isinstance(evt, event.JoyButtonPress):
+            used_joys = [e.flap.joy for e in player_entries if isinstance(e.flap, event.JoyButtonPress)]
+            if evt.joy in used_joys:
+                return None
+
+        # JoyHatMotion isn't a valid flap event
+        if isinstance(evt, event.JoyHatMotion):
+            return None
+
+        return evt
+
+    @staticmethod
     def _get_device_locked_event(evt: Optional[event.Event], cur_joy) -> Optional[event.Event]:
         """Used by scriptutil.wait_until_non_none() to block until a key locked to current input device has been pressed"""
         escape_id = event.KeyPress(arcade.key.ESCAPE).get_id()
@@ -60,7 +74,7 @@ class Registration:
 
         while True:
             self.msg = f'Press your desired FLAP to register Player {len(self.entries)+1}...\nESC to start game. F5 to clear bottom player.'
-            evt = yield from scriptutl.wait_until_non_none(lambda: self.last_input if not isinstance(self.last_input, event.JoyHatMotion) else None)
+            evt = yield from scriptutl.wait_until_non_none(lambda: self._get_flap_event(self.last_input, self.entries))
 
             if evt.get_id() == event.KeyPress(arcade.key.F5).get_id():
                 self.last_input = None
