@@ -31,9 +31,6 @@ class Registration:
     @staticmethod
     def _get_flap_event(evt: Optional[event.Event], player_entries):
         if evt is not None:
-            if evt.get_id() == event.KeyPress(arcade.key.ESCAPE).get_id():
-                return None
-
             # don't allow a joystick to be used twice
             if isinstance(evt, event.JoyButtonPress):
                 used_joys = [e.flap.joy for e in player_entries if isinstance(e.flap, event.JoyButtonPress)]
@@ -80,6 +77,11 @@ class Registration:
             self.msg = f'Press your desired FLAP to register Player {len(self.entries)+1}...\n\"Enter\" to start game. F5 to clear bottom player.'
             evt = yield from scriptutl.wait_until_non_none(lambda: self._get_flap_event(self.last_input, self.entries))  # type: ignore
 
+            # exit game
+            if evt.get_id() == event.KeyPress(arcade.key.ESCAPE).get_id():
+                self.game.close()
+
+            # remove bottom player
             if evt.get_id() == event.KeyPress(arcade.key.F5).get_id():
                 self.last_input = None
                 if len(self.entries) > 0:
@@ -127,7 +129,8 @@ class Registration:
         arcade.draw_text(self.msg, 25, self.win_height - 175, CFG.UI.HEADER_COLOR, 30)
         summary = self.get_summary()
         arcade.draw_text(summary, 25, self.win_height - 200, CFG.UI.BODY_COLOR, 25, anchor_y='top')
-        arcade.draw_text('After registering, press FLAP to cycle through names.', 100, 40, CFG.UI.HEADER_COLOR, 20)
+        msg = 'After registering, press FLAP to change player name. ESCAPE at any time to exit game.'
+        arcade.draw_text(msg, 200, 40, CFG.UI.HEADER_COLOR, 20)
 
     def on_event(self, evt: event.Event) -> None:
         matched = False
