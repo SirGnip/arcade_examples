@@ -1,6 +1,7 @@
 import random
 from typing import TYPE_CHECKING
 
+import PIL.Image
 import arcade
 
 from gnp.arcadelib import scriptutl
@@ -48,7 +49,7 @@ class Player(arcade.Sprite):
     LEFT = 1
     NO_DIRECTION = 2
 
-    def __init__(self, img: str, name: str, game: "Game"):
+    def __init__(self, img_path: str, name: str, clr: arcade.arcade_types.Color, game: "Game"):
         super().__init__()
         self.game = game
         # self.change_x: float  # should be coming from arcade package
@@ -62,8 +63,34 @@ class Player(arcade.Sprite):
         self.score = 0
         self.name = name
         self.is_alive = True
-        right_texture = arcade.load_texture(img)
-        left_texture = arcade.load_texture(img, mirrored=True)
+        if img_path.endswith('player_blob.png') and clr is not None:
+            # replace colors
+            img = PIL.Image.open(img_path)
+            width, height = img.size
+
+            darker_clr = (
+                    int(clr[0] * 0.7),
+                    int(clr[1] * 0.7),
+                    int(clr[2] * 0.7)
+            )
+            for i, px in enumerate(img.getdata()):
+                if px == (65, 216, 0, 255):
+                    img.putpixel((i % width, i // width), clr + (255,))
+                elif px == (53, 178, 0, 255):
+                    img.putpixel((i % width, i // width), darker_clr + (255,))
+
+            # facing-right texture
+            cache_id = f'{img_path}-{clr}-right'
+            right_texture = arcade.Texture(cache_id, img)
+
+            # facing-left texture
+            img = img.transpose(PIL.Image.FLIP_LEFT_RIGHT)
+            cache_id = f'{img}-{clr}-left'
+            left_texture = arcade.Texture(cache_id, img)
+        else:
+            # no color replacing
+            right_texture = arcade.load_texture(img)
+            left_texture = arcade.load_texture(img, mirrored=True)
         self.textures.append(right_texture)
         self.textures.append(left_texture)
         self.set_texture(Player.RIGHT)

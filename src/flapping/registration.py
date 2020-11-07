@@ -190,7 +190,7 @@ class _RegistrationEntry:
     """Represents a player during the registration phase"""
     def __init__(self):
         self.name: str
-        self.names = itertools.cycle(sorted(CFG.Registration.names.keys()))
+        self.names = itertools.cycle(sorted(CFG.Registration.avatars.keys()))
         self.make_name()
         self.flap = None
         self.left = None
@@ -255,8 +255,9 @@ class _RegistrationEntry:
 
     def finalize(self, game: 'Game') -> None:
         """Create Player objects and input handling dict when registration is complete"""
-        img = 'img/' + CFG.Registration.names[self.name]
-        player = Player(img, self.name, game)
+        player_avatar = CFG.Registration.avatars[self.name]
+        img = 'img/' + player_avatar.image
+        player = Player(img, self.name, player_avatar.color, game)
         game.player_list.append(player)
 
         # flap
