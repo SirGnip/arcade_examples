@@ -25,7 +25,7 @@ class Registration:
         'Choco': PlayerAvatar('player_blob.png', (139, 69, 19)),
         'Shadow': PlayerAvatar('player_blob.png', (80, 80, 80)),
         'Grasion': PlayerAvatar('player_blob.png', (170, 170, 170)),
-        'Snowy': PlayerAvatar('player_blob.png', (255, 255, 255)),
+        'Snowy': PlayerAvatar('player_blob.png', (230, 230, 230)),
         # 'Quackers': PlayerAvatar('player/duck.png', None),
     }
 
