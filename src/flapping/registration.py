@@ -184,8 +184,12 @@ class Registration:
                 unpickler.persistent_load = load_from_persistent_id  # type: ignore[assignment]
                 self.entries = unpickler.load()
                 print('Loaded {} players'.format(len(self.entries)))
+                for entry in self.entries:
+                    if entry.name not in CFG.Registration.avatars:
+                        raise KeyError(f'Loaded player "{entry.name}", but it does not match any supported player names.')
         except Exception as exc:
-            print('WARNING: Problem loading previous player list from file:"{}" so starting with an empty player list. Exception: {}'.format(CFG.Player.filename, type(exc)))
+            print('WARNING: Problem loading previous player list from file:"{}" so starting with an empty player list. Exception: {} {}'.format(CFG.Player.filename, type(exc), str(exc)))
+            self.entries = []
             traceback.print_exc()
 
 

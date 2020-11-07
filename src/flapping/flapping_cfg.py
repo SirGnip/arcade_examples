@@ -26,7 +26,7 @@ class Registration:
         'Shadow': PlayerAvatar('player_blob.png', (80, 80, 80)),
         'Grasion': PlayerAvatar('player_blob.png', (170, 170, 170)),
         'Snowy': PlayerAvatar('player_blob.png', (255, 255, 255)),
-        # 'Quackers': PlayerData('player/duck.png', None),
+        # 'Quackers': PlayerAvatar('player/duck.png', None),
     }
 
 
