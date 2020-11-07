@@ -1,4 +1,5 @@
 import itertools
+import random
 import inspect
 import pickle
 import traceback
@@ -74,7 +75,7 @@ class Registration:
         self.load_players()
 
         while True:
-            self.msg = f'Press your desired FLAP to register Player {len(self.entries)+1}...\n\"Enter\" to start game. F5 to clear bottom player.'
+            self.msg = f'Press your desired FLAP to register Player {len(self.entries)+1}...\n\"Enter\" to start game. F5 to remove bottom player.'
             evt = yield from scriptutl.wait_until_non_none(lambda: self._get_flap_event(self.last_input, self.entries))  # type: ignore
 
             # exit game
@@ -196,12 +197,14 @@ class Registration:
 class _RegistrationEntry:
     """Represents a player during the registration phase"""
     def __init__(self):
-        self.name: str
+        self.name: str = ""
         self.names = itertools.cycle(sorted(CFG.Registration.avatars.keys()))
         self.make_name()
         self.flap = None
         self.left = None
         self.right = None
+        for _ in range(random.randint(0, 20)):
+            self.make_name()
 
     def is_event_used(self, evt: event.Event):
         used_ids = (
