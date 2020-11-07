@@ -78,7 +78,7 @@ class Registration:
 
         while True:
             self.msg = f'Press your desired FLAP to register Player {len(self.entries)+1}...\n\"Enter\" to start game. F5 to clear bottom player.'
-            evt = yield from scriptutl.wait_until_non_none(lambda: self._get_flap_event(self.last_input, self.entries))
+            evt = yield from scriptutl.wait_until_non_none(lambda: self._get_flap_event(self.last_input, self.entries))  # type: ignore
 
             if evt.get_id() == event.KeyPress(arcade.key.F5).get_id():
                 self.last_input = None

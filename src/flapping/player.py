@@ -58,7 +58,7 @@ class Player(arcade.Sprite):
         self.btn_right = False
         self.state: int = Player.FLYING
         self.dir: int = Player.NO_DIRECTION
-        self.skid_fx = None  # initialized in .setup()
+        self.skid_fx = self.make_dust_emitter()  # re-initialized in .setup()
         self.setup()
         self.score = 0
         self.name = name

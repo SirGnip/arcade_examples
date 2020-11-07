@@ -13,4 +13,4 @@ where players try to flap their player higher than their opponents.
     - ["minimal_using_class"](src/minimal_using_class.py): demonstrate a minimal `arcade` game, using `arcade`'s class-based interface.
     - ["minimal_one_of_everything"](src/minimal_one_of_everything.py): demonstrate a minimal `arcade` game, using several key features of `arcade`. 
 
-![Hits](http://cc.amazingcounters.com/counter.php?i=3245830&c=9737803)
+![Hits](https://hitcounter.pythonanywhere.com/count/tag.svg?url=https%3A%2F%2Fgithub.com%2FSirGnip%2Farcade_examples)
