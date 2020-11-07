@@ -36,9 +36,9 @@ class Window:
 
 class Game:
     debug = False
-    goal_score = 5
+    goal_score = 10
     maps = ('map1.tmx', 'map2.tmx', 'map3.tmx', 'map4.tmx', 'map5.tmx')
-    rounds = len(maps)
+    rounds = len(maps) * 2
 
 
 class Player:

@@ -36,6 +36,9 @@ class Game(arcade.Window):
         self.script = self.game_script()
         self.reg = Registration(self, height)
 
+        self.round_num = 0
+        self.winners = []
+
         self.window_width = width
         self.window_height = height
         arcade.set_background_color((178, 198, 232))
@@ -79,6 +82,21 @@ class Game(arcade.Window):
             p.score = 0
             x += 100
 
+    def setup_new_round(self):
+        for p in self.player_list:
+            p.round_wins = 0
+
+    def on_round_end(self):
+        # find max score, reward
+        max_score = max([p.score for p in self.player_list])
+        for p in self.player_list:
+            if p.score == max_score:
+                p.round_wins += 1
+                print(f'{p.name} wins round with {p.score} points. Has now won {p.round_wins} rounds.')
+
+        max_round_wins = max([p.round_wins for p in self.player_list])
+        self.winners = [p for p in self.player_list if p.round_wins == max_round_wins]
+
     def game_script(self):
         """Generator-based game "script" that drives the game through its main states"""
         if CFG.Game.debug:
@@ -93,21 +111,23 @@ class Game(arcade.Window):
             self.state = Game.REGISTRATION
             yield from scriptutl.wait_until(lambda: self.reg.done)
 
-        for i in range(CFG.Game.rounds):
-            self.setup(CFG.Game.maps[i % len(CFG.Game.maps)])
-            self.state = Game.PLAY
-            yield from scriptutl.wait_until(self.is_game_over)
-            yield from scriptutl.sleep(1.0)  # give player a chance to see the effects of their action (and let FX play)
-            self.fx_actors.clear()
+        while True:
+            self.setup_new_round()
+            for round_idx in range(CFG.Game.rounds):
+                self.round_num = round_idx + 1
+                self.setup(CFG.Game.maps[round_idx % len(CFG.Game.maps)])
+                self.state = Game.PLAY
+                yield from scriptutl.wait_until(self.is_game_over)
+                self.on_round_end()
+                yield from scriptutl.sleep(1.0)  # give player a chance to see the effects of their action (and let FX play)
+                self.fx_actors.clear()
 
-            self.state = Game.SCOREBOARD
-            # blackout input briefly so thtat any final, furious button mashing doesn't unintentionally skip the scoreboard
-            self.scoreboard_sub_state = 'blackout'
-            yield from scriptutl.sleep(1.0)
-            self.scoreboard_sub_state = 'ready'
-            yield from scriptutl.wait_until(lambda: self.scoreboard_sub_state == 'done')
-
-        print('Game over')
+                self.state = Game.SCOREBOARD
+                # blackout input briefly so that any final, furious button mashing doesn't unintentionally skip the scoreboard
+                self.scoreboard_sub_state = 'blackout'
+                yield from scriptutl.sleep(1.0)
+                self.scoreboard_sub_state = 'ready'
+                yield from scriptutl.wait_until(lambda: self.scoreboard_sub_state == 'done')
 
     def on_draw(self):
         arcade.start_render()
@@ -123,8 +143,17 @@ class Game(arcade.Window):
             self.draw_scores()
         elif self.state == Game.SCOREBOARD:
             sorted_player_list = sorted(self.player_list, key=lambda p: p.score, reverse=True)
-            arcade.draw_text('Scoreboard', 100, self.window_height - 100, CFG.UI.HEADER_COLOR, 60)
-            lines = ['{} = {}'.format(p.name, p.score) for p in sorted_player_list]
+            if self.round_num == CFG.Game.rounds:
+                header = f'FINAL Scoreboard (round {self.round_num} of {CFG.Game.rounds})'
+                footer = 'Winners: ' + ','.join([p.name for p in self.winners])
+            else:
+                header = f'Scoreboard (round {self.round_num} of {CFG.Game.rounds})'
+                footer = None
+            arcade.draw_text(header, 100, self.window_height - 100, CFG.UI.HEADER_COLOR, 60)
+            if footer:
+                arcade.draw_text(footer, 100, self.window_height - 150, CFG.UI.HEADER_COLOR, 36)
+
+            lines = [f'{p.name}: {p.score} points, {p.round_wins} rounds' for p in sorted_player_list]
             arcade.draw_text('\n'.join(lines), 100, 200, CFG.UI.BODY_COLOR, 38)
             if self.scoreboard_sub_state == 'ready':
                 arcade.draw_text('Press any input to continue...', 100, 50, CFG.UI.HEADER_COLOR, 24)
