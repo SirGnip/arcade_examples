@@ -17,6 +17,9 @@ setuptools.setup(
     # https://hynek.me/articles/sharing-your-labor-of-love-pypi-quick-and-dirty/
     packages=setuptools.find_packages(where="src"),
     package_dir={"": "src"},
+    package_data={
+        "flapping": ["resources/img/*", "resources/map/*"],
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",

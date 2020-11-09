@@ -1,4 +1,5 @@
 import os
+import os.path
 
 import arcade
 
@@ -66,6 +67,7 @@ class Game(arcade.Window):
 
     def setup(self, map_name):
         # map
+        map_name = 'resources/map/' + map_name
         print('Loading map: {}'.format(map_name))
         self.map = arcade.tilemap.read_tmx(map_name)
         self.walls = arcade.tilemap.process_layer(self.map, 'walls', 1.0)
@@ -322,8 +324,12 @@ class Game(arcade.Window):
 
 
 def main() -> None:
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))  # make working dir relative to location of code
+    print(f'Location of script entry point: {__file__}')
+    new_path = os.path.dirname(os.path.abspath(__file__))
+    print(f'Setting working directory to: {new_path}')
+    os.chdir(new_path)  # set working dir relative to location of script entry point
     app = Game(1280, 720, 'Flapping', CFG.Window.fullscreen)
+    # app.set_location(1500, 200)
     arcade.run()
 
 

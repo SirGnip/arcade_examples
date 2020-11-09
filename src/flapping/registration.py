@@ -266,7 +266,7 @@ class _RegistrationEntry:
     def finalize(self, game: 'Game') -> None:
         """Create Player objects and input handling dict when registration is complete"""
         player_avatar = CFG.Registration.avatars[self.name]
-        img = 'img/' + player_avatar.image
+        img = 'resources/img/' + player_avatar.image
         player = Player(img, self.name, player_avatar.color, game)
         game.player_list.append(player)
 

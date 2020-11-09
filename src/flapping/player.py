@@ -63,6 +63,7 @@ class Player(arcade.Sprite):
         self.score = 0
         self.name = name
         self.is_alive = True
+        print(f'Loading texture: {img_path}')
         if img_path.endswith('player_blob.png') and clr is not None:
             # replace colors
             img = PIL.Image.open(img_path)
